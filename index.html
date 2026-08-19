@@ -36,21 +36,7 @@ main{max-width:760px;margin:0 auto;padding:14px 14px 60px}
 .cbtns .b.on.NG{border-color:#e06c6c;color:#e06c6c;background:#1f0d0d}
 .cbtns .b.on.开拍{border-color:#e8c77f;color:#e8c77f;background:#1d1808}
 #toast{position:fixed;top:60px;left:50%;transform:translateX(-50%);background:#23252c;border:1px solid #c9a227;color:#e8e6e3;padding:8px 20px;border-radius:20px;font-size:13px;display:none;z-index:99}
-#pass-mask{position:fixed;inset:0;background:#0e0f13;z-index:200;display:flex;align-items:center;justify-content:center}
-#pass-mask .box{text-align:center;width:min(300px,86vw)}
-#pass-mask h2{color:#c9a227;letter-spacing:4px;font-size:20px;margin-bottom:4px}
-#pass-mask p{color:#8a8f98;font-size:13px;margin-bottom:20px}
-#pass-mask input{width:100%;padding:12px;background:#16181d;color:#e8e6e3;border:1px solid #3a3d46;border-radius:10px;font-size:16px;text-align:center;outline:none}
-#pass-mask button{width:100%;margin-top:12px;padding:12px;background:linear-gradient(145deg,#d9b94a,#a8851d);color:#1a1507;font-size:16px;font-weight:800;border:none;border-radius:10px;cursor:pointer}
-#pass-err{color:#e05d4a;font-size:12px;margin-top:8px;display:none}
 </style></head><body>
-
-<div id="pass-mask"><div class="box">
-<h2>《方寸窗口·无界长宁》</h2><p>拍摄进度 · 请输入访问密码</p>
-<input id="pass-in" type="password" placeholder="访问密码">
-<button onclick="tryIn()">进 入</button>
-<div id="pass-err">密码错误</div>
-</div></div>
 
 <header>
 <h1>🎬 《方寸窗口·无界长宁》拍摄进度</h1>
@@ -764,13 +750,11 @@ main{max-width:760px;margin:0 auto;padding:14px 14px 60px}
 <div id="toast"></div>
 
 <script>
-var H='changning2026';
 var GET_URL='https://xinhuo-1300523387.cos.ap-guangzhou.myqcloud.com/huijing-shoot/progress-3.json';
 var PUT_URL='';
 var DATA={};   // n -> status
 var local = {}; // 本机改的（轮询时不覆盖）
-function tryIn(){var v=document.getElementById('pass-in').value;if(!v)return;if(v===H){sessionStorage.setItem('cn_pass_ok','1');document.getElementById('pass-mask').style.display='none';init();}else{document.getElementById('pass-err').style.display='block';}}
-if(sessionStorage.getItem('cn_pass_ok')){document.getElementById('pass-mask').style.display='none';init();}
+init();
 function toast(m){var t=document.getElementById('toast');t.textContent=m;t.style.display='block';clearTimeout(t._h);t._h=setTimeout(function(){t.style.display='none'},1600)}
 function render(){var done=0,ng=0,kaipai=0,daipai=0;
   for(var n=1;n<=63;n++){var st=DATA[n]||'待拍';
