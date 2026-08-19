@@ -764,13 +764,12 @@ main{max-width:760px;margin:0 auto;padding:14px 14px 60px}
 <div id="toast"></div>
 
 <script>
-var H='a1938c847977c979bf3c6a8d751b3cdf054bfe53566e5fbc7998ca8c97301c60';
+var H='changning2026';
 var GET_URL='https://xinhuo-1300523387.cos.ap-guangzhou.myqcloud.com/huijing-shoot/progress-3.json';
 var PUT_URL='';
 var DATA={};   // n -> status
 var local = {}; // 本机改的（轮询时不覆盖）
-function sha(s){return crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)).then(function(b){return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,'0')}).join('')})}
-function tryIn(){var v=document.getElementById('pass-in').value;if(!v)return;sha(v).then(function(hh){if(hh===H){sessionStorage.setItem('cn_pass_ok','1');document.getElementById('pass-mask').style.display='none';init();}else{document.getElementById('pass-err').style.display='block';}})}
+function tryIn(){var v=document.getElementById('pass-in').value;if(!v)return;if(v===H){sessionStorage.setItem('cn_pass_ok','1');document.getElementById('pass-mask').style.display='none';init();}else{document.getElementById('pass-err').style.display='block';}}
 if(sessionStorage.getItem('cn_pass_ok')){document.getElementById('pass-mask').style.display='none';init();}
 function toast(m){var t=document.getElementById('toast');t.textContent=m;t.style.display='block';clearTimeout(t._h);t._h=setTimeout(function(){t.style.display='none'},1600)}
 function render(){var done=0,ng=0,kaipai=0,daipai=0;
