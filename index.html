@@ -61,7 +61,7 @@ header h1{font-size:17px;font-weight:700}header h1 b{color:var(--accent)}header 
 <div class="sec" id="view-done" style="display:none"></div>
 <div class="sec" id="view-tasks" style="display:none"></div>
 <div class="sec" id="view-slate" style="display:none"></div>
-<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-20 13:47:16<br>操作自动写回云端，每20秒自动同步全场</div>
+<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-20 13:52:00<br>操作自动写回云端，每20秒自动同步全场</div>
 </div>
 <div class="toast" id="toast"></div>
 <script>
@@ -78,7 +78,15 @@ function saveMe(){
   try{localStorage.setItem('hjcloud_me',JSON.stringify(ME));}catch(e){}
   render();toast('已进入：'+n+(r?'（'+r+'）':''));
 }
-function showTab(v,el){VIEW=v;document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('on');});el.classList.add('on');render();}
+function showTab(v,el){
+  VIEW=v;
+  ['plan','done','tasks','slate'].forEach(function(k){
+    var d=document.getElementById('view-'+k);
+    if(d)d.style.display=(k===v)?'block':'none';
+  });
+  document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('on');});
+  el.classList.add('on');render();
+}
 function isDir(){return ME&&ME.role==='导演';}
 function canOp(){return ME&&(ME.role==='导演'||ME.role==='场记');}
 function loadState(){
