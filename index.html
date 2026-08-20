@@ -71,7 +71,7 @@ header h1{font-size:17px;font-weight:700}header h1 b{color:var(--accent)}header 
 <div class="sec" id="view-done" style="display:none"></div>
 <div class="sec" id="view-mat" style="display:none"></div>
 <div class="sec" id="view-tasks" style="display:none"></div>
-<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-20 22:46:29<br>操作自动写回云端，每20秒自动同步全场</div>
+<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-20 23:03:41<br>操作自动写回云端，每20秒自动同步全场</div>
 </div>
 <div class="toast" id="toast"></div>
 <script>
@@ -176,6 +176,17 @@ function mediaHTML(x){
   return '<div class="tl" style="margin-top:6px;color:#8fd0ff">🎥 '+m.map(function(r){
     return esc(r.cam||'')+'机:'+esc(r.video||'—')+(r.audio?'/🎙'+esc(r.audio):'');
   }).join('　')+'</div>';
+}
+// 25镜段 → 63参考图（通告单/任务清单显示用）
+var MAP25={1:[1,2],2:[3,4,5],3:[6,7,8],4:[9,10,11,12],5:[13,14],6:[15,16,17],7:[18,19,20],8:[21,22],9:[23,24,25,26],10:[27,28,29,30],11:[31],12:[32,33,34],13:[35,36,37,38],14:[39],15:[40,41,42,43],16:[44],17:[45],18:[46,47,48],19:[49,50],20:[51,52],21:[53,54],22:[55,56,57],23:[58,59],24:[60,61,62],25:[63]};
+function segImgs(title){
+  var ms=String(title||'').match(/镜(\d+)/g)||[];
+  var urls=[];
+  ms.forEach(function(m){
+    var n=parseInt(m.replace('镜',''));
+    (MAP25[n]||[]).forEach(function(k){urls.push('https://xinhuo-1300523387.cos.ap-guangzhou.myqcloud.com/huijing-shoot/shots/镜'+('00'+k).slice(-2)+'.jpg');});
+  });
+  return urls.length? imgHTML(null,urls) : '';
 }
 function editMedia(id){
   if(!canMedia()){toast('只有导演/场记/摄影可录素材编号');return;}
@@ -292,6 +303,7 @@ function renderHome(){
       +'<span class="tg" style="color:var(--accent);font-weight:700">'+esc(t.time_slot)+'</span>'
       +(t.location?'<span class="tg">📍'+esc(t.location)+'</span>':'')
       +'</div><div class="pc" style="font-size:13.5px">'+esc(t.title)+'</div>'
+      +segImgs(t.title)
       +((t.cast||[]).length?'<div class="tl">👤 '+esc((t.cast||[]).join('、'))+'</div>':'')
       +'</div>';
   });
@@ -324,7 +336,7 @@ function renderPlan(plan){
       +'<div class="th" style="margin-top:10px">'
       +'<span class="tg">'+esc(x.shot_no)+'</span><span class="tg">'+esc(x.shot_type||'')+'</span>'
       +'<span class="tg" style="color:'+sc+';font-weight:700;border-color:'+sc+'">'+stLabel(x.status)+'</span>'
-      +(canMedia()?'<button class="btn" style="padding:3px 10px;font-size:12px;margin-left:auto" onclick="editMedia('+x.id+')">🎥 编号</button>':'')
+      +(canMedia()?'<button class="btn" style="padding:4px 12px;font-size:12.5px;margin-left:auto;background:rgba(111,168,220,.12);border-color:#6fa8dc;color:#8fd0ff;font-weight:700" onclick="editMedia('+x.id+')">🎥 编号</button>':'')
       +(canOp()?'<button class="btn" style="padding:3px 10px;font-size:12px" onclick="setStatus('+x.id+',\'素材\')">📦 标素材</button>':'')
       +'</div>'
       +'<div class="pc">'+esc(x.content)+'</div>'
@@ -395,6 +407,7 @@ function renderTasks(tasks){
     var pct=Math.round(gd/t.shots.length*100);
     h+='<div class="card" style="border-left:4px solid '+sc+'"><div class="th"><span class="tg">任务'+t.group_no+'</span><span class="tg">'+esc(t.time_slot)+'</span><span class="tg" style="color:'+sc+'">'+st+'</span><span class="tm">约'+(t.est_minutes||0)+'分</span></div>'
       +'<h3>'+esc(t.title)+'</h3>'
+      +segImgs(t.title)
       +(t.location?'<div class="tl">📍 '+esc(t.location)+'</div>':'')
       +((t.cast||[]).length?'<div class="tl">👤 '+esc((t.cast||[]).join('、'))+'</div>':'')
       +(t.wardrobe?'<div class="tl">💄 '+esc(t.wardrobe)+'</div>':'')
