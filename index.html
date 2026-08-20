@@ -60,29 +60,31 @@ header h1{font-size:17px;font-weight:700}header h1 b{color:var(--accent)}header 
 <div class="progress-big" style="margin:0 16px"><div id="pbar" style="width:0%"></div></div>
 <div style="display:flex;gap:8px;margin:0 16px 4px"><button class="btn" style="flex:1;font-size:12.5px" onclick="exportCSV()">📥 场记CSV</button></div>
 <div class="tabs">
-<div class="tab on" onclick="showTab('plan',this)">🎬 待拍摄</div>
+<div class="tab on" onclick="showTab('home',this)">🏠 通告单</div>
+<div class="tab" onclick="showTab('plan',this)">🎬 待拍摄</div>
 <div class="tab" onclick="showTab('done',this)">✅ 已拍摄</div>
 <div class="tab" onclick="showTab('mat',this)">📦 素材提供</div>
 <div class="tab" onclick="showTab('tasks',this)">📅 任务清单</div>
 </div>
-<div class="sec" id="view-plan"></div>
+<div class="sec" id="view-home"></div>
+<div class="sec" id="view-plan" style="display:none"></div>
 <div class="sec" id="view-done" style="display:none"></div>
 <div class="sec" id="view-mat" style="display:none"></div>
 <div class="sec" id="view-tasks" style="display:none"></div>
-<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-20 22:32:52<br>操作自动写回云端，每20秒自动同步全场</div>
+<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-20 22:46:29<br>操作自动写回云端，每20秒自动同步全场</div>
 </div>
 <div class="toast" id="toast"></div>
 <script>
 var PID=parseInt(new URLSearchParams(location.search).get('p')||'1')||1;
 var PROGRESS_URL='https://xinhuo-1300523387.cos.ap-guangzhou.myqcloud.com/huijing-shoot/progress-'+PID+'.json';
 var PUTURL_URL='https://xinhuo-1300523387.cos.ap-guangzhou.myqcloud.com/huijing-shoot/puturl-'+PID+'.json';
-var state={plan:[],tasks:[],takes:[],members:[]}, putUrl=null, ME=null, VIEW='plan', busy=false;
+var state={plan:[],tasks:[],takes:[],members:[]}, putUrl=null, ME=null, VIEW='home', busy=false;
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 function toast(t){var e=document.getElementById('toast');e.textContent=t;e.style.display='block';clearTimeout(e._t);e._t=setTimeout(function(){e.style.display='none';},2600);}
 function saveMe(){
   var n=document.getElementById('me-name').value.trim(), r=document.getElementById('me-role').value;
   if(!n){toast('先输入昵称');return;}
-  if((r==='导演'||r==='场记')&&localStorage.getItem('hjcloud_ok')!=='1'){
+  if((r==='导演'||r==='场记'||r==='摄影')&&localStorage.getItem('hjcloud_ok')!=='1'){
     var pw=prompt('🔒 导演/场记操作需要口令：');
     if(pw!=='Mm944714'){toast('❌ 口令错误');return;}
     try{localStorage.setItem('hjcloud_ok','1');}catch(e){}
@@ -94,7 +96,7 @@ function saveMe(){
 }
 function showTab(v,el){
   VIEW=v;
-  ['plan','done','mat','tasks'].forEach(function(k){
+  ['home','plan','done','mat','tasks'].forEach(function(k){
     var d=document.getElementById('view-'+k);
     if(d)d.style.display=(k===v)?'block':'none';
   });
@@ -103,6 +105,7 @@ function showTab(v,el){
 }
 function isDir(){return ME&&ME.role==='导演';}
 function canOp(){return ME&&(ME.role==='导演'||ME.role==='场记');}
+function canMedia(){return ME&&(ME.role==='导演'||ME.role==='场记'||ME.role==='摄影');}
 function loadState(){
   return fetch(PROGRESS_URL,{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.json();}).then(function(d){
     if(d.version!=='63v4'){toast('⚠️ 页面是旧版本，请刷新（右上角···→刷新）');return;}
@@ -167,6 +170,65 @@ function imgHTML(shotNo, imgs){
     return '<img src="'+esc(u)+'" onclick="window.open(\''+esc(u)+'\')">';
   }).join('')+'</div>';
 }
+function mediaHTML(x){
+  var m=x.media||[];
+  if(!m.length)return '';
+  return '<div class="tl" style="margin-top:6px;color:#8fd0ff">🎥 '+m.map(function(r){
+    return esc(r.cam||'')+'机:'+esc(r.video||'—')+(r.audio?'/🎙'+esc(r.audio):'');
+  }).join('　')+'</div>';
+}
+function editMedia(id){
+  if(!canMedia()){toast('只有导演/场记/摄影可录素材编号');return;}
+  var it=state.plan.find(function(x){return x.id===id;});
+  if(!it)return;
+  var m=(it.media||[]).slice();
+  while(m.length<1)m.push({cam:'A',video:'',audio:''});
+  var html='<div class="mask" id="md-mask" onclick="if(event.target===this)this.remove()"><div class="box" style="max-width:340px">'
+    +'<h3 style="margin-bottom:8px">🎥 素材编号 · '+esc(it.shot_no)+'</h3>'
+    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">机位数：'
+    +'<select id="md-cams" onchange="mdRows()"><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>'
+    +'<span style="font-size:11.5px;color:var(--muted)">几个机位录几次</span></div>'
+    +'<div id="md-rows"></div>'
+    +'<button class="btn primary big" style="width:100%;margin-top:10px" onclick="mdSave('+id+')">保存编号</button>'
+    +'<button class="btn big" style="width:100%;margin-top:6px" onclick="document.getElementById(\'md-mask\').remove()">取消</button>'
+    +'</div></div>';
+  document.body.insertAdjacentHTML('beforeend',html);
+  var sel=document.getElementById('md-cams');
+  sel.value=String(Math.max(1,m.length));
+  mdRows(m);
+}
+function mdRows(init){
+  var rows=document.getElementById('md-rows');if(!rows)return;
+  var n=parseInt(document.getElementById('md-cams').value||'1');
+  var m=init||[];
+  while(m.length<n)m.push({cam:String.fromCharCode(65+m.length),video:'',audio:''});
+  m=m.slice(0,n);
+  rows.innerHTML=m.map(function(r,i){
+    return '<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">'
+      +'<span class="tg">'+esc(r.cam)+'机</span>'
+      +'<input placeholder="视频编号 如A001" value="'+esc(r.video||'')+'" style="flex:1;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 8px;font-size:12.5px" data-v="'+i+'">'
+      +'<input placeholder="音频编号 如S01" value="'+esc(r.audio||'')+'" style="flex:1;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 8px;font-size:12.5px" data-a="'+i+'">'
+      +'</div>';
+  }).join('');
+  window._md= m;
+}
+function mdSave(id){
+  var it=state.plan.find(function(x){return x.id===id;});
+  if(!it)return;
+  var n=parseInt(document.getElementById('md-cams').value||'1');
+  var m=[];
+  for(var i=0;i<n;i++){
+    var v=document.querySelector('#md-rows input[data-v="'+i+'"]');
+    var a=document.querySelector('#md-rows input[data-a="'+i+'"]');
+    if(!v)continue;
+    var video=(v.value||'').trim(), audio=(a?a.value||'':'').trim();
+    if(video||audio)m.push({cam:String.fromCharCode(65+i),video:video,audio:audio});
+  }
+  it.media=m;
+  document.getElementById('md-mask').remove();
+  save();
+  toast('🎥 素材编号已记录'+(m.length?('（'+m.length+'机位）'):'（已清空）'));
+}
 function copyMatList(){
   var mats=state.plan.filter(function(x){return x.status==='素材';});
   if(!mats.length){toast('还没有素材镜头');return;}
@@ -200,10 +262,55 @@ function render(){
   document.getElementById('done').textContent=done;
   document.getElementById('total').textContent=plan.length;
   document.getElementById('pbar').style.width=(plan.length?Math.round(done/plan.length*100):0)+'%';
-  if(VIEW==='plan')renderPlan(plan);
+  if(VIEW==='home')renderHome();
+  else if(VIEW==='plan')renderPlan(plan);
   else if(VIEW==='done')renderDone(plan);
   else if(VIEW==='mat')renderMat(plan);
   else renderTasks(tasks);
+}
+function todayStr(){
+  var d=new Date(),w=['日','一','二','三','四','五','六'][d.getDay()];
+  return (d.getMonth()+1)+'月'+d.getDate()+'日 周'+w;
+}
+function renderHome(){
+  var plan=state.plan||[], tasks=state.tasks||[];
+  var done=plan.filter(function(x){return x.status==='完成';}).length;
+  var mat=plan.filter(function(x){return x.status==='素材';}).length;
+  var todo=plan.length-done-mat;
+  var pct=plan.length?Math.round((done+mat)/plan.length*100):0;
+  var h='<div class="tl" style="margin-bottom:10px">📅 '+todayStr()+' · '+esc(ME.name)+'（'+esc(ME.role)+'）</div>'
+    +'<div class="card" style="text-align:center;padding:16px">'
+    +'<div style="font-size:30px;font-weight:800;color:var(--green)">'+done+'<span style="font-size:14px;color:var(--muted);font-weight:400"> 完成</span>'
+    +'<span style="font-size:20px;color:var(--muted)"> / </span>'+mat+'<span style="font-size:14px;color:var(--muted);font-weight:400"> 素材</span>'
+    +'<span style="font-size:20px;color:var(--muted)"> / </span>'+todo+'<span style="font-size:14px;color:var(--muted);font-weight:400"> 待拍</span></div>'
+    +'<div class="progress-big" style="margin:10px 0"><div style="width:'+pct+'%"></div></div>'
+    +'<div class="tl">总进度 '+pct+'%（'+plan.length+'镜）</div></div>';
+  h+='<h3 style="margin:14px 0 8px">📋 今日通告单</h3>';
+  if(!tasks.length)h+='<div class="empty">暂无排班</div>';
+  tasks.forEach(function(t){
+    h+='<div class="card" style="padding:11px 14px"><div class="th">'
+      +'<span class="tg" style="color:var(--accent);font-weight:700">'+esc(t.time_slot)+'</span>'
+      +(t.location?'<span class="tg">📍'+esc(t.location)+'</span>':'')
+      +'</div><div class="pc" style="font-size:13.5px">'+esc(t.title)+'</div>'
+      +((t.cast||[]).length?'<div class="tl">👤 '+esc((t.cast||[]).join('、'))+'</div>':'')
+      +'</div>';
+  });
+  h+='<h3 style="margin:14px 0 8px">📝 脚本（只读）</h3>';
+  var seen={}, segs=[];
+  plan.forEach(function(x){
+    var k=x.scene_no||'';
+    if(k&&!seen[k]){seen[k]=1;segs.push(x);}
+  });
+  segs.sort(function(a,b){return (a.scene_no||'').localeCompare(b.scene_no||'',undefined,{numeric:true});});
+  if(!segs.length){h+='<div class="empty">暂无脚本</div>';}
+  segs.forEach(function(x){
+    h+='<div class="card" style="padding:11px 14px"><div class="th"><span class="tg">'+esc(x.scene_no||x.shot_no)+'</span>'
+      +'<span class="tg">'+esc(x.shot_type||'')+'</span></div>'
+      +'<div class="pc" style="font-size:13.5px">'+esc(x.content||'')+'</div>'
+      +(x.dialogue?'<div class="pd" style="background:rgba(232,199,127,.08);border-left:3px solid var(--accent);padding:6px 8px;border-radius:6px;margin-top:6px">🎙 '+esc(x.dialogue)+'</div>':'')
+      +'</div>';
+  });
+  document.getElementById('view-home').innerHTML=h;
 }
 function renderPlan(plan){
   var todo=plan.filter(function(x){return x.status!=='完成'&&x.status!=='素材';});
@@ -217,9 +324,11 @@ function renderPlan(plan){
       +'<div class="th" style="margin-top:10px">'
       +'<span class="tg">'+esc(x.shot_no)+'</span><span class="tg">'+esc(x.shot_type||'')+'</span>'
       +'<span class="tg" style="color:'+sc+';font-weight:700;border-color:'+sc+'">'+stLabel(x.status)+'</span>'
-      +(canOp()?'<button class="btn" style="padding:3px 10px;font-size:12px;margin-left:auto" onclick="setStatus('+x.id+',\'素材\')">📦 标素材</button>':'')
+      +(canMedia()?'<button class="btn" style="padding:3px 10px;font-size:12px;margin-left:auto" onclick="editMedia('+x.id+')">🎥 编号</button>':'')
+      +(canOp()?'<button class="btn" style="padding:3px 10px;font-size:12px" onclick="setStatus('+x.id+',\'素材\')">📦 标素材</button>':'')
       +'</div>'
       +'<div class="pc">'+esc(x.content)+'</div>'
+      +mediaHTML(x)
       +(x.dialogue?'<div class="pd" style="background:rgba(232,199,127,.08);border-left:3px solid var(--accent);padding:6px 8px;border-radius:6px;margin-top:6px">🎙 '+esc(x.dialogue)+'</div>':'');
     if(canOp()){
       h+='<div class="ops">'
@@ -245,9 +354,13 @@ function renderMat(plan){
       +'<span class="tg" style="color:#6fa8dc;font-weight:700;border-color:#6fa8dc">📦 素材</span>'
       +'</div>'
       +'<div class="pc">'+esc(x.content)+'</div>'
-      +(x.dialogue?'<div class="pd" style="background:rgba(111,168,220,.08);border-left:3px solid #6fa8dc;padding:6px 8px;border-radius:6px;margin-top:6px">🎙 '+esc(x.dialogue)+'</div>':'')
-      +(canOp()?'<div class="ops"><button class="btn green" onclick="setStatus('+x.id+',\'完成\')">✓ 素材已提供</button><button class="btn" style="background:#0d1117;border:1px solid var(--line)" onclick="setStatus('+x.id+',\'待拍\')">↩ 改拍摄</button></div>':'')
-      +'</div>';
+      +mediaHTML(x)
+      +(x.dialogue?'<div class="pd" style="background:rgba(111,168,220,.08);border-left:3px solid #6fa8dc;padding:6px 8px;border-radius:6px;margin-top:6px">🎙 '+esc(x.dialogue)+'</div>':'');
+    var opsB='';
+    if(canMedia())opsB+='<button class="btn" style="background:#0d1117;border:1px solid var(--line)" onclick="editMedia('+x.id+')">🎥 素材编号</button>';
+    if(canOp())opsB+='<button class="btn green" onclick="setStatus('+x.id+',\'完成\')">✓ 素材已提供</button><button class="btn" style="background:#0d1117;border:1px solid var(--line)" onclick="setStatus('+x.id+',\'待拍\')">↩ 改拍摄</button>';
+    if(opsB)h+='<div class="ops">'+opsB+'</div>';
+    h+='</div>';
   });
   document.getElementById('view-mat').innerHTML=h||'<div class="empty">还没有素材镜头——在「🎬 待拍摄」里点「📦 标素材」就会移到这里</div>';
 }
@@ -264,8 +377,10 @@ function renderDone(plan){
       +'<span class="tg" style="color:'+sc+';font-weight:700;border-color:'+sc+'">'+(isMat?'📦 素材':'完成')+'</span>'
       +'</div>'
       +'<div class="pc">'+esc(x.content)+'</div>'
+      +mediaHTML(x)
       +(x.dialogue?'<div class="pd" style="background:rgba(95,191,122,.08);border-left:3px solid '+sc+';padding:6px 8px;border-radius:6px;margin-top:6px">🎙 '+esc(x.dialogue)+'</div>':'')
-      +(canOp()?'<div class="ops"><button class="btn" style="flex:1;padding:12px 2px;font-size:15px;border-radius:10px;font-weight:700;border:none;background:var(--card);color:var(--muted);border:1px solid var(--line)" onclick="setStatus('+x.id+',\'待拍\')">↩ 撤回</button></div>':'')
+      +(canMedia()?'<div class="ops"><button class="btn" style="background:#0d1117;border:1px solid var(--line)" onclick="editMedia('+x.id+')">🎥 素材编号</button><button class="btn" style="flex:1;padding:12px 2px;font-size:15px;border-radius:10px;font-weight:700;border:none;background:var(--card);color:var(--muted);border:1px solid var(--line)" onclick="setStatus('+x.id+',\'待拍\')">↩ 撤回</button></div>':'')
+      +(canOp()&&!canMedia()?'<div class="ops"><button class="btn" style="flex:1;padding:12px 2px;font-size:15px;border-radius:10px;font-weight:700;border:none;background:var(--card);color:var(--muted);border:1px solid var(--line)" onclick="setStatus('+x.id+',\'待拍\')">↩ 撤回</button></div>':'')
       +'</div>';
   });
   document.getElementById('view-done').innerHTML=h||'<div class="empty">还没有已归档的镜头</div>';
