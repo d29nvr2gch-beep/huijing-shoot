@@ -61,7 +61,7 @@ header h1{font-size:17px;font-weight:700}header h1 b{color:var(--accent)}header 
 <div class="sec" id="view-done" style="display:none"></div>
 <div class="sec" id="view-tasks" style="display:none"></div>
 <div class="sec" id="view-slate" style="display:none"></div>
-<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-20 15:22:02<br>操作自动写回云端，每20秒自动同步全场</div>
+<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-20 15:34:36<br>操作自动写回云端，每20秒自动同步全场</div>
 </div>
 <div class="toast" id="toast"></div>
 <script>
@@ -90,13 +90,17 @@ function showTab(v,el){
 function isDir(){return ME&&ME.role==='导演';}
 function canOp(){return ME&&(ME.role==='导演'||ME.role==='场记');}
 function loadState(){
-  return fetch(PROGRESS_URL,{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.json();}).then(function(d){state=d;render();}).catch(function(){});
+  return fetch(PROGRESS_URL,{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.json();}).then(function(d){
+    if(d.version!=='63v4'){toast('⚠️ 页面是旧版本，请刷新（右上角···→刷新）');return;}
+    state=d;render();
+  }).catch(function(){});
 }
 function loadPut(){
   return fetch(PUTURL_URL,{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.json();}).then(function(d){putUrl=d.put;}).catch(function(){});
 }
 function save(){
   if(busy)return;
+  if(state.version!=='63v4'){toast('⚠️ 页面过期，先刷新再操作');return;}
   if(!putUrl){toast('写回通道未就绪');return;}
   busy=true;
   state.updated=new Date().toISOString();
