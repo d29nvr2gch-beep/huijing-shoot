@@ -25,6 +25,13 @@ header h1{font-size:17px;font-weight:700}header h1 b{color:var(--accent)}header 
 .btn.green{background:var(--green);border-color:var(--green);color:#08130b}
 .btn.red{background:var(--red);border-color:var(--red);color:#1a0808}
 .btn.yellow{background:#e8c77f;border-color:#e8c77f;color:#1a1408}
+/* 镜头卡片：大图置顶 + 按钮独立一排 */
+.shot-img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px;background:#0d1117;cursor:zoom-in;display:block}
+.shot-imgs{margin-bottom:10px;overflow-x:auto;display:flex;gap:6px;border-radius:10px}
+.shot-imgs img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px;background:#0d1117;cursor:zoom-in;flex:0 0 auto}
+.ops{display:flex;gap:8px;margin-top:10px}
+.ops .btn{flex:1;padding:12px 2px;font-size:15px;border-radius:10px;font-weight:700;text-align:center;border:none}
+.ops .btn:active{transform:scale(.97)}
 .progress-big{height:10px;background:#0d1117;border-radius:5px;margin:12px 0;overflow:hidden}.progress-big div{height:10px;background:var(--green);border-radius:5px;transition:width .5s}
 .empty{text-align:center;color:var(--muted);padding:40px 16px;font-size:14px}
 .slate{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;text-align:center}
@@ -61,7 +68,7 @@ header h1{font-size:17px;font-weight:700}header h1 b{color:var(--accent)}header 
 <div class="sec" id="view-done" style="display:none"></div>
 <div class="sec" id="view-tasks" style="display:none"></div>
 <div class="sec" id="view-slate" style="display:none"></div>
-<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-20 15:39:35<br>操作自动写回云端，每20秒自动同步全场</div>
+<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-20 15:50:23<br>操作自动写回云端，每20秒自动同步全场</div>
 </div>
 <div class="toast" id="toast"></div>
 <script>
@@ -145,9 +152,12 @@ function imgHTML(shotNo, imgs){
     return m?['https://xinhuo-1300523387.cos.ap-guangzhou.myqcloud.com/huijing-shoot/shots/镜'+('00'+m[1]).slice(-2)+'.jpg']:[];
   })();
   if(!list.length)return '';
-  return '<div style="display:flex;gap:6px;margin-top:8px;overflow-x:auto;padding-bottom:2px">'
-    + list.map(function(u){return '<img src="'+esc(u)+'" alt="" style="width:100%;max-width:210px;border-radius:8px;aspect-ratio:16/9;object-fit:cover;background:#1a1f2a;flex:0 0 auto;cursor:zoom-in" loading="lazy" onclick="window.open(\''+esc(u)+'\')">';}).join('')
-    + '</div>';
+  if(list.length===1){
+    return '<img class="shot-img" src="'+esc(list[0])+'" onclick="window.open(\''+esc(list[0])+'\')">';
+  }
+  return '<div class="shot-imgs">'+list.map(function(u){
+    return '<img src="'+esc(u)+'" onclick="window.open(\''+esc(u)+'\')">';
+  }).join('')+'</div>';
 }
 function render(){
   if(!ME){return;}
@@ -168,17 +178,22 @@ function renderPlan(plan){
   h+='<div class="tl" style="margin-bottom:10px">🎯 待拍 '+todo.length+' 镜 · 已完成 '+plan.filter(function(x){return x.status==='完成';}).length+' 镜已归档到「✅ 已拍摄」</div>';
   todo.forEach(function(x){
     var sc=stColor(x.status);
-    h+='<div class="card pl" style="border-left:4px solid '+sc+'"><div class="th">'
+    h+='<div class="card pl" style="border-left:4px solid '+sc+'">'
+      +imgHTML(x.shot_no,x.images)
+      +'<div class="th" style="margin-top:10px">'
       +'<span class="tg">'+esc(x.shot_no)+'</span><span class="tg">'+esc(x.shot_type||'')+'</span>'
-      +'<span class="tg" style="color:'+sc+';font-weight:700">'+esc(x.status)+'</span><span class="sp"></span>';
+      +'<span class="tg" style="color:'+sc+';font-weight:700;border-color:'+sc+'">'+esc(x.status)+'</span>'
+      +'</div>'
+      +'<div class="pc">'+esc(x.content)+'</div>'
+      +(x.dialogue?'<div class="pd" style="background:rgba(232,199,127,.08);border-left:3px solid var(--accent);padding:6px 8px;border-radius:6px;margin-top:6px">🎙 '+esc(x.dialogue)+'</div>':'');
     if(canOp()){
-      if(x.status!=='开拍')h+='<button class="btn yellow" style="padding:5px 10px;font-size:12px" onclick="setStatus('+x.id+',\'开拍\')">🎬 开拍</button>';
-      h+='<button class="btn green" style="padding:5px 10px;font-size:12px" onclick="setStatus('+x.id+',\'完成\')">✓ 完成</button>'
-        +'<button class="btn red" style="padding:5px 10px;font-size:12px" onclick="setStatus('+x.id+',\'NG\')">✗ NG</button>';
+      h+='<div class="ops">'
+        +(x.status!=='开拍'?'<button class="btn yellow" onclick="setStatus('+x.id+',\'开拍\')">🎬 开拍</button>':'')
+        +'<button class="btn green" onclick="setStatus('+x.id+',\'完成\')">✓ 完成</button>'
+        +'<button class="btn red" onclick="setStatus('+x.id+',\'NG\')">✗ NG</button>'
+        +'</div>';
     }
-    h+='</div><div class="pc">'+esc(x.content)+'</div>'
-      +(x.dialogue?'<div class="pd" style="background:rgba(232,199,127,.08);border-left:3px solid var(--accent);padding:6px 8px;border-radius:6px;margin-top:6px">🎙 '+esc(x.dialogue)+'</div>':'')
-      +imgHTML(x.shot_no,x.images)+'</div>';
+    h+='</div>';
   });
   document.getElementById('view-plan').innerHTML=h||'<div class="empty">🎉 全部拍完！去「✅ 已拍摄」查看归档</div>';
 }
@@ -186,13 +201,16 @@ function renderDone(plan){
   var done=plan.filter(function(x){return x.status==='完成';});
   var h='<div class="tl" style="margin-bottom:10px">✅ 已拍摄 '+done.length+' 镜（点击「↩ 撤回」可回到执行计划）</div>';
   done.forEach(function(x){
-    h+='<div class="card" style="border-left:4px solid #5fbf7a;opacity:.92"><div class="th">'
+    h+='<div class="card" style="border-left:4px solid #5fbf7a;opacity:.92">'
+      +imgHTML(x.shot_no,x.images)
+      +'<div class="th" style="margin-top:10px">'
       +'<span class="tg">'+esc(x.shot_no)+'</span><span class="tg">'+esc(x.shot_type||'')+'</span>'
-      +'<span class="tg" style="color:#5fbf7a;font-weight:700">完成</span><span class="sp"></span>'
-      +(canOp()?'<button class="btn" style="padding:5px 10px;font-size:12px" onclick="setStatus('+x.id+',\'待拍\')">↩ 撤回</button>':'')
-      +'</div><div class="pc">'+esc(x.content)+'</div>'
+      +'<span class="tg" style="color:#5fbf7a;font-weight:700;border-color:#5fbf7a">完成</span>'
+      +'</div>'
+      +'<div class="pc">'+esc(x.content)+'</div>'
       +(x.dialogue?'<div class="pd" style="background:rgba(95,191,122,.08);border-left:3px solid #5fbf7a;padding:6px 8px;border-radius:6px;margin-top:6px">🎙 '+esc(x.dialogue)+'</div>':'')
-      +imgHTML(x.shot_no,x.images)+'</div>';
+      +(canOp()?'<div class="ops"><button class="btn" style="flex:1;padding:12px 2px;font-size:15px;border-radius:10px;font-weight:700;border:none;background:var(--card);color:var(--muted);border:1px solid var(--line)" onclick="setStatus('+x.id+',\'待拍\')">↩ 撤回</button></div>':'')
+      +'</div>';
   });
   document.getElementById('view-done').innerHTML=h||'<div class="empty">还没有已拍摄的镜头</div>';
 }
