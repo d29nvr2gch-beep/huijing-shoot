@@ -59,16 +59,16 @@ header h1{font-size:17px;font-weight:700}header h1 b{color:var(--accent)}header 
 </div>
 <div class="progress-big" style="margin:0 16px"><div id="pbar" style="width:0%"></div></div>
 <div class="tabs">
-<div class="tab on" onclick="showTab('plan',this)">📋 执行计划</div>
+<div class="tab on" onclick="showTab('plan',this)">🎬 待拍摄</div>
 <div class="tab" onclick="showTab('done',this)">✅ 已拍摄</div>
+<div class="tab" onclick="showTab('mat',this)">📦 素材提供</div>
 <div class="tab" onclick="showTab('tasks',this)">📅 任务清单</div>
-<div class="tab" onclick="showTab('slate',this)">🎬 场记板</div>
 </div>
 <div class="sec" id="view-plan"></div>
 <div class="sec" id="view-done" style="display:none"></div>
+<div class="sec" id="view-mat" style="display:none"></div>
 <div class="sec" id="view-tasks" style="display:none"></div>
-<div class="sec" id="view-slate" style="display:none"></div>
-<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-20 15:54:02<br>操作自动写回云端，每20秒自动同步全场</div>
+<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-20 16:19:14<br>操作自动写回云端，每20秒自动同步全场</div>
 </div>
 <div class="toast" id="toast"></div>
 <script>
@@ -87,7 +87,7 @@ function saveMe(){
 }
 function showTab(v,el){
   VIEW=v;
-  ['plan','done','tasks','slate'].forEach(function(k){
+  ['plan','done','mat','tasks'].forEach(function(k){
     var d=document.getElementById('view-'+k);
     if(d)d.style.display=(k===v)?'block':'none';
   });
@@ -169,42 +169,57 @@ function render(){
   document.getElementById('pbar').style.width=(plan.length?Math.round(done/plan.length*100):0)+'%';
   if(VIEW==='plan')renderPlan(plan);
   else if(VIEW==='done')renderDone(plan);
-  else if(VIEW==='tasks')renderTasks(tasks);
-  else renderSlate(plan,takes);
+  else if(VIEW==='mat')renderMat(plan);
+  else renderTasks(tasks);
 }
 function renderPlan(plan){
-  var todo=plan.filter(function(x){return x.status!=='完成';});
+  var todo=plan.filter(function(x){return x.status!=='完成'&&x.status!=='素材';});
   var h='';
   if(!canOp())h+='<div class="tl" style="margin-bottom:10px">👀 只读模式：导演/场记身份可操作勾选</div>';
-  h+='<div class="tl" style="margin-bottom:10px">🎯 待拍 '+todo.length+' 镜 · 已完成 '+plan.filter(function(x){return x.status==='完成';}).length+' 镜已归档到「✅ 已拍摄」</div>';
+  h+='<div class="tl" style="margin-bottom:10px">🎯 待拍摄 '+todo.length+' 镜 · 已完成 '+plan.filter(function(x){return x.status==='完成';}).length+' 镜 · 📦素材 '+plan.filter(function(x){return x.status==='素材';}).length+' 镜</div>';
   todo.forEach(function(x){
     var sc=stColor(x.status);
-    var isMat=x.status==='素材';
     h+='<div class="card pl" style="border-left:4px solid '+sc+'">'
       +imgHTML(x.shot_no,x.images)
       +'<div class="th" style="margin-top:10px">'
       +'<span class="tg">'+esc(x.shot_no)+'</span><span class="tg">'+esc(x.shot_type||'')+'</span>'
       +'<span class="tg" style="color:'+sc+';font-weight:700;border-color:'+sc+'">'+stLabel(x.status)+'</span>'
-      +(canOp()&&!isMat?'<button class="btn" style="padding:3px 10px;font-size:12px;margin-left:auto" onclick="setStatus('+x.id+',\'素材\')">📦 素材</button>':'')
+      +(canOp()?'<button class="btn" style="padding:3px 10px;font-size:12px;margin-left:auto" onclick="setStatus('+x.id+',\'素材\')">📦 标素材</button>':'')
       +'</div>'
       +'<div class="pc">'+esc(x.content)+'</div>'
       +(x.dialogue?'<div class="pd" style="background:rgba(232,199,127,.08);border-left:3px solid var(--accent);padding:6px 8px;border-radius:6px;margin-top:6px">🎙 '+esc(x.dialogue)+'</div>':'');
     if(canOp()){
       h+='<div class="ops">'
-        +(x.status==='待拍'?'<button class="btn yellow" onclick="setStatus('+x.id+',\'开拍\')">🎬 开拍</button>'
-          :x.status==='开拍'?'<button class="btn yellow" onclick="setStatus('+x.id+',\'待拍\')">⏹ 停拍</button>'
-          :'<button class="btn" style="background:#0d1117;border:1px solid var(--line)" onclick="setStatus('+x.id+',\'待拍\')">↩ 改拍</button>')
+        +(x.status==='开拍'?'<button class="btn yellow" onclick="setStatus('+x.id+',\'待拍\')">⏹ 停拍</button>'
+          :'<button class="btn yellow" onclick="setStatus('+x.id+',\'开拍\')">🎬 开拍</button>')
         +'<button class="btn green" onclick="setStatus('+x.id+',\'完成\')">✓ 完成</button>'
         +'<button class="btn red" onclick="setStatus('+x.id+',\'NG\')">✗ NG</button>'
         +'</div>';
     }
     h+='</div>';
   });
-  document.getElementById('view-plan').innerHTML=h||'<div class="empty">🎉 全部拍完！去「✅ 已拍摄」查看归档</div>';
+  document.getElementById('view-plan').innerHTML=h||'<div class="empty">🎉 待拍摄已清空！去「✅ 已拍摄」和「📦 素材提供」查看归档</div>';
+}
+function renderMat(plan){
+  var mats=plan.filter(function(x){return x.status==='素材';});
+  var h='<div class="tl" style="margin-bottom:10px">📦 素材提供 '+mats.length+' 镜（用素材剪辑的镜头都在这里；「✓ 完成」=素材已提供）</div>';
+  mats.forEach(function(x){
+    h+='<div class="card" style="border-left:4px solid #6fa8dc">'
+      +imgHTML(x.shot_no,x.images)
+      +'<div class="th" style="margin-top:10px">'
+      +'<span class="tg">'+esc(x.shot_no)+'</span><span class="tg">'+esc(x.shot_type||'')+'</span>'
+      +'<span class="tg" style="color:#6fa8dc;font-weight:700;border-color:#6fa8dc">📦 素材</span>'
+      +'</div>'
+      +'<div class="pc">'+esc(x.content)+'</div>'
+      +(x.dialogue?'<div class="pd" style="background:rgba(111,168,220,.08);border-left:3px solid #6fa8dc;padding:6px 8px;border-radius:6px;margin-top:6px">🎙 '+esc(x.dialogue)+'</div>':'')
+      +(canOp()?'<div class="ops"><button class="btn green" onclick="setStatus('+x.id+',\'完成\')">✓ 素材已提供</button><button class="btn" style="background:#0d1117;border:1px solid var(--line)" onclick="setStatus('+x.id+',\'待拍\')">↩ 改拍摄</button></div>':'')
+      +'</div>';
+  });
+  document.getElementById('view-mat').innerHTML=h||'<div class="empty">还没有素材镜头——在「🎬 待拍摄」里点「📦 标素材」就会移到这里</div>';
 }
 function renderDone(plan){
-  var done=plan.filter(function(x){return x.status==='完成'||x.status==='素材';});
-  var h='<div class="tl" style="margin-bottom:10px">✅ 已归档 '+done.length+' 镜（含素材提供；「↩ 撤回」可回到执行计划）</div>';
+  var done=plan.filter(function(x){return x.status==='完成';});
+  var h='<div class="tl" style="margin-bottom:10px">✅ 已拍摄 '+done.length+' 镜（「↩ 撤回」可回到待拍摄）</div>';
   done.forEach(function(x){
     var isMat=x.status==='素材';
     var sc=isMat?'#6fa8dc':'#5fbf7a';
@@ -222,7 +237,7 @@ function renderDone(plan){
   document.getElementById('view-done').innerHTML=h||'<div class="empty">还没有已归档的镜头</div>';
 }
 function renderTasks(tasks){
-  var h='<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><button class="btn" style="font-size:12.5px" onclick="showTab(\'plan\',document.querySelectorAll(\'.tab\')[0])">→ 去执行计划勾选</button><span class="tl">任务状态由组内镜头自动联动</span></div>';
+  var h='<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><button class="btn" style="font-size:12.5px" onclick="showTab(\'plan\',document.querySelectorAll(\'.tab\')[0])">→ 去待拍摄勾选</button><span class="tl">任务状态由组内镜头自动联动</span></div>';
   if(!tasks.length){h+='<div class="empty">还没有任务清单</div>';}
   tasks.forEach(function(t){
     var gd=t.shots.filter(function(s){return s.status==='完成';}).length;
