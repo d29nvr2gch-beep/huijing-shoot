@@ -59,7 +59,7 @@ header h1{font-size:17px;font-weight:700}header h1 b{color:var(--accent)}header 
 <div class="sec" id="view-plan"></div>
 <div class="sec" id="view-tasks" style="display:none"></div>
 <div class="sec" id="view-slate" style="display:none"></div>
-<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-20 13:34:37<br>操作自动写回云端，每20秒自动同步全场</div>
+<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-20 13:42:29<br>操作自动写回云端，每20秒自动同步全场</div>
 </div>
 <div class="toast" id="toast"></div>
 <script>
@@ -125,6 +125,12 @@ function beep(){
   }catch(e){}
 }
 function stColor(s){return{待拍:'#565e6e',开拍:'#e8c77f',完成:'#5fbf7a',NG:'#e06c6c'}[s]||'#565e6e';}
+function imgHTML(shotNo){
+  var m=String(shotNo||'').match(/镜(\d+)/);
+  if(!m)return '';
+  var n=('00'+m[1]).slice(-2);
+  return '<img src="https://xinhuo-1300523387.cos.ap-guangzhou.myqcloud.com/huijing-shoot/shots/镜'+n+'.jpg" alt="'+esc(shotNo)+'" style="width:100%;border-radius:8px;margin-top:8px;aspect-ratio:16/9;object-fit:cover;background:#1a1f2a" loading="lazy">';
+}
 function render(){
   if(!ME){return;}
   var plan=state.plan||[], tasks=state.tasks||[], takes=state.takes||[];
@@ -150,7 +156,8 @@ function renderPlan(plan){
         +'<button class="btn red" style="padding:5px 10px;font-size:12px" onclick="setStatus('+x.id+',\'NG\')">✗ NG</button>';
     }
     h+='</div><div class="pc">'+esc(x.content)+'</div>'
-      +(x.dialogue?'<div class="pd">🎙 '+esc(x.dialogue)+'</div>':'')+'</div>';
+      +(x.dialogue?'<div class="pd">🎙 '+esc(x.dialogue)+'</div>':'')
+      +imgHTML(x.shot_no)+'</div>';
   });
   document.getElementById('view-plan').innerHTML=h||'<div class="empty">暂无执行计划</div>';
 }
