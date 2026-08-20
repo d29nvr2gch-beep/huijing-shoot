@@ -61,7 +61,7 @@ header h1{font-size:17px;font-weight:700}header h1 b{color:var(--accent)}header 
 <div class="sec" id="view-done" style="display:none"></div>
 <div class="sec" id="view-tasks" style="display:none"></div>
 <div class="sec" id="view-slate" style="display:none"></div>
-<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-20 15:12:47<br>操作自动写回云端，每20秒自动同步全场</div>
+<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-20 15:13:05<br>操作自动写回云端，每20秒自动同步全场</div>
 </div>
 <div class="toast" id="toast"></div>
 <script>
@@ -142,7 +142,7 @@ function imgHTML(shotNo, imgs){
   })();
   if(!list.length)return '';
   return '<div style="display:flex;gap:6px;margin-top:8px;overflow-x:auto;padding-bottom:2px">'
-    + list.map(function(u){return '<img src="'+esc(u)+'" alt="" style="width:100%;max-width:210px;border-radius:8px;aspect-ratio:16/9;object-fit:cover;background:#1a1f2a;flex:0 0 auto;cursor:zoom-in" loading="lazy" onclick="window.open(''+esc(u)+'')">';}).join('')
+    + list.map(function(u){return '<img src="'+esc(u)+'" alt="" style="width:100%;max-width:210px;border-radius:8px;aspect-ratio:16/9;object-fit:cover;background:#1a1f2a;flex:0 0 auto;cursor:zoom-in" loading="lazy" onclick="window.open(\''+esc(u)+'\')">';}).join('')
     + '</div>';
 }
 function render(){
