@@ -58,6 +58,7 @@ header h1{font-size:17px;font-weight:700}header h1 b{color:var(--accent)}header 
 <div class="pill" style="flex:1">进度 <b style="color:var(--green)" id="done">0</b>/<span id="total">0</span> 镜</div>
 </div>
 <div class="progress-big" style="margin:0 16px"><div id="pbar" style="width:0%"></div></div>
+<div style="display:flex;gap:8px;margin:0 16px 4px"><button class="btn" style="flex:1;font-size:12.5px" onclick="exportCSV()">📥 场记CSV</button></div>
 <div class="tabs">
 <div class="tab on" onclick="showTab('plan',this)">🎬 待拍摄</div>
 <div class="tab" onclick="showTab('done',this)">✅ 已拍摄</div>
@@ -68,7 +69,7 @@ header h1{font-size:17px;font-weight:700}header h1 b{color:var(--accent)}header 
 <div class="sec" id="view-done" style="display:none"></div>
 <div class="sec" id="view-mat" style="display:none"></div>
 <div class="sec" id="view-tasks" style="display:none"></div>
-<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-20 16:19:14<br>操作自动写回云端，每20秒自动同步全场</div>
+<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-20 22:29:29<br>操作自动写回云端，每20秒自动同步全场</div>
 </div>
 <div class="toast" id="toast"></div>
 <script>
@@ -81,6 +82,12 @@ function toast(t){var e=document.getElementById('toast');e.textContent=t;e.style
 function saveMe(){
   var n=document.getElementById('me-name').value.trim(), r=document.getElementById('me-role').value;
   if(!n){toast('先输入昵称');return;}
+  if((r==='导演'||r==='场记')&&localStorage.getItem('hjcloud_ok')!=='1'){
+    var pw=prompt('🔒 导演/场记操作需要口令：');
+    if(pw!=='huijing2026'){toast('❌ 口令错误');return;}
+    try{localStorage.setItem('hjcloud_ok','1');}catch(e){}
+    toast('🔓 口令验证通过');
+  }
   ME={name:n,role:r};
   try{localStorage.setItem('hjcloud_me',JSON.stringify(ME));}catch(e){}
   render();toast('已进入：'+n+(r?'（'+r+'）':''));
@@ -160,6 +167,32 @@ function imgHTML(shotNo, imgs){
     return '<img src="'+esc(u)+'" onclick="window.open(\''+esc(u)+'\')">';
   }).join('')+'</div>';
 }
+function copyMatList(){
+  var mats=state.plan.filter(function(x){return x.status==='素材';});
+  if(!mats.length){toast('还没有素材镜头');return;}
+  var txt='【素材清单】'+esc(state.name||'')+'\n共 '+mats.length+' 条\n\n'+mats.map(function(x,i){
+    return (i+1)+'. '+x.shot_no+' '+x.shot_type+'：'+(x.content||'').split('\n')[0]+(x.dialogue?'\n   旁白：'+x.dialogue:'');
+  }).join('\n');
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(function(){toast('📋 素材清单已复制，可直接粘贴到微信');});
+  }else{
+    var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');toast('📋 素材清单已复制');}catch(e){toast('复制失败，长按选择复制');}
+    document.body.removeChild(ta);
+  }
+}
+function exportCSV(){
+  var plan=state.plan||[];
+  var rows=[['镜号','景别','状态','画面','旁白','拍摄条数']];
+  plan.forEach(function(x){
+    var n=(state.takes||[]).filter(function(t){return t.shot_no===x.shot_no;}).length;
+    rows.push([x.shot_no,x.shot_type||'',x.status,(x.content||'').replace(/\n/g,' '),(x.dialogue||'').replace(/\n/g,' '),n]);
+  });
+  var csv='\ufeff'+rows.map(function(r){return r.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='拍摄场记.csv';a.click();
+  toast('📥 场记CSV已下载');
+}
 function render(){
   if(!ME){return;}
   var plan=state.plan||[], tasks=state.tasks||[], takes=state.takes||[];
@@ -202,7 +235,8 @@ function renderPlan(plan){
 }
 function renderMat(plan){
   var mats=plan.filter(function(x){return x.status==='素材';});
-  var h='<div class="tl" style="margin-bottom:10px">📦 素材提供 '+mats.length+' 镜（用素材剪辑的镜头都在这里；「✓ 完成」=素材已提供）</div>';
+  var h='<div class="tl" style="margin-bottom:10px">📦 素材提供 '+mats.length+' 镜（用素材剪辑的镜头都在这里；「✓ 完成」=素材已提供）</div>'
+    +'<div style="display:flex;gap:8px;margin-bottom:10px"><button class="btn" style="flex:1" onclick="copyMatList()">📋 复制素材清单</button></div>';
   mats.forEach(function(x){
     h+='<div class="card" style="border-left:4px solid #6fa8dc">'
       +imgHTML(x.shot_no,x.images)
