@@ -59,7 +59,7 @@ header h1{font-size:17px;font-weight:700}header h1 b{color:var(--accent)}header 
 <div class="sec" id="view-plan"></div>
 <div class="sec" id="view-tasks" style="display:none"></div>
 <div class="sec" id="view-slate" style="display:none"></div>
-<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-20 13:23:32<br>操作自动写回云端，每20秒自动同步全场</div>
+<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-20 13:25:19<br>操作自动写回云端，每20秒自动同步全场</div>
 </div>
 <div class="toast" id="toast"></div>
 <script>
@@ -143,9 +143,9 @@ function renderPlan(plan){
       +'<span class="tg">'+esc(x.shot_no)+'</span><span class="tg">'+esc(x.shot_type||'')+'</span>'
       +'<span class="tg" style="color:'+sc+';font-weight:700">'+esc(x.status)+'</span><span class="sp"></span>';
     if(canOp()){
-      if(x.status!=='开拍')h+='<button class="btn yellow" style="padding:5px 10px;font-size:12px" onclick="setStatus('+x.id+','开拍')">🎬 开拍</button>';
-      h+='<button class="btn green" style="padding:5px 10px;font-size:12px" onclick="setStatus('+x.id+','完成')">✓ 完成</button>'
-        +'<button class="btn red" style="padding:5px 10px;font-size:12px" onclick="setStatus('+x.id+','NG')">✗ NG</button>';
+      if(x.status!=='开拍')h+='<button class="btn yellow" style="padding:5px 10px;font-size:12px" onclick="setStatus('+x.id+',\'开拍\')">🎬 开拍</button>';
+      h+='<button class="btn green" style="padding:5px 10px;font-size:12px" onclick="setStatus('+x.id+',\'完成\')">✓ 完成</button>'
+        +'<button class="btn red" style="padding:5px 10px;font-size:12px" onclick="setStatus('+x.id+',\'NG\')">✗ NG</button>';
     }
     h+='</div><div class="pc">'+esc(x.content)+'</div>'
       +(x.dialogue?'<div class="pd">🎙 '+esc(x.dialogue)+'</div>':'')+'</div>';
@@ -153,7 +153,7 @@ function renderPlan(plan){
   document.getElementById('view-plan').innerHTML=h||'<div class="empty">暂无执行计划</div>';
 }
 function renderTasks(tasks){
-  var h='<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><button class="btn" style="font-size:12.5px" onclick="showTab('plan',document.querySelectorAll('.tab')[0])">→ 去执行计划勾选</button><span class="tl">任务状态由组内镜头自动联动</span></div>';
+  var h='<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><button class="btn" style="font-size:12.5px" onclick="showTab(\'plan\',document.querySelectorAll(\'.tab\')[0])">→ 去执行计划勾选</button><span class="tl">任务状态由组内镜头自动联动</span></div>';
   if(!tasks.length){h+='<div class="empty">还没有任务清单</div>';}
   tasks.forEach(function(t){
     var gd=t.shots.filter(function(s){return s.status==='完成';}).length;
