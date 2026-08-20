@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>会镜·拍摄执行 · 《方寸窗口·无界长宁》长宁出入境30周年（63镜·含参考图）（协作版）</title><style>
+<title>会镜·拍摄执行 · 《方寸窗口·无界长宁》长宁出入境30周年（25镜正式分镜+63张参考图）（协作版）</title><style>
 :root{--bg:#0e1116;--card:#171c24;--line:#252c38;--text:#e8ecf3;--muted:#8b93a3;--accent:#e8c77f;--green:#5fbf7a;--red:#e06c6c}
 *{margin:0;padding:0;box-sizing:border-box}body{background:var(--bg);color:var(--text);font-family:-apple-system,'PingFang SC',sans-serif;font-size:15px}
 #app{max-width:720px;margin:0 auto;padding:0 16px 60px}
@@ -61,7 +61,7 @@ header h1{font-size:17px;font-weight:700}header h1 b{color:var(--accent)}header 
 <div class="sec" id="view-done" style="display:none"></div>
 <div class="sec" id="view-tasks" style="display:none"></div>
 <div class="sec" id="view-slate" style="display:none"></div>
-<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-20 13:53:18<br>操作自动写回云端，每20秒自动同步全场</div>
+<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-20 15:12:47<br>操作自动写回云端，每20秒自动同步全场</div>
 </div>
 <div class="toast" id="toast"></div>
 <script>
@@ -135,11 +135,15 @@ function beep(){
   }catch(e){}
 }
 function stColor(s){return{待拍:'#565e6e',开拍:'#e8c77f',完成:'#5fbf7a',NG:'#e06c6c'}[s]||'#565e6e';}
-function imgHTML(shotNo){
-  var m=String(shotNo||'').match(/镜(\d+)/);
-  if(!m)return '';
-  var n=('00'+m[1]).slice(-2);
-  return '<img src="https://xinhuo-1300523387.cos.ap-guangzhou.myqcloud.com/huijing-shoot/shots/镜'+n+'.jpg" alt="'+esc(shotNo)+'" style="width:100%;border-radius:8px;margin-top:8px;aspect-ratio:16/9;object-fit:cover;background:#1a1f2a" loading="lazy">';
+function imgHTML(shotNo, imgs){
+  var list=(imgs&&imgs.length)?imgs:(function(){
+    var m=String(shotNo||'').match(/镜(\d+)/);
+    return m?['https://xinhuo-1300523387.cos.ap-guangzhou.myqcloud.com/huijing-shoot/shots/镜'+('00'+m[1]).slice(-2)+'.jpg']:[];
+  })();
+  if(!list.length)return '';
+  return '<div style="display:flex;gap:6px;margin-top:8px;overflow-x:auto;padding-bottom:2px">'
+    + list.map(function(u){return '<img src="'+esc(u)+'" alt="" style="width:100%;max-width:210px;border-radius:8px;aspect-ratio:16/9;object-fit:cover;background:#1a1f2a;flex:0 0 auto;cursor:zoom-in" loading="lazy" onclick="window.open(''+esc(u)+'')">';}).join('')
+    + '</div>';
 }
 function render(){
   if(!ME){return;}
@@ -169,8 +173,8 @@ function renderPlan(plan){
         +'<button class="btn red" style="padding:5px 10px;font-size:12px" onclick="setStatus('+x.id+',\'NG\')">✗ NG</button>';
     }
     h+='</div><div class="pc">'+esc(x.content)+'</div>'
-      +(x.dialogue?'<div class="pd">🎙 '+esc(x.dialogue)+'</div>':'')
-      +imgHTML(x.shot_no)+'</div>';
+      +(x.dialogue?'<div class="pd" style="background:rgba(232,199,127,.08);border-left:3px solid var(--accent);padding:6px 8px;border-radius:6px;margin-top:6px">🎙 '+esc(x.dialogue)+'</div>':'')
+      +imgHTML(x.shot_no,x.images)+'</div>';
   });
   document.getElementById('view-plan').innerHTML=h||'<div class="empty">🎉 全部拍完！去「✅ 已拍摄」查看归档</div>';
 }
@@ -182,7 +186,9 @@ function renderDone(plan){
       +'<span class="tg">'+esc(x.shot_no)+'</span><span class="tg">'+esc(x.shot_type||'')+'</span>'
       +'<span class="tg" style="color:#5fbf7a;font-weight:700">完成</span><span class="sp"></span>'
       +(canOp()?'<button class="btn" style="padding:5px 10px;font-size:12px" onclick="setStatus('+x.id+',\'待拍\')">↩ 撤回</button>':'')
-      +'</div><div class="pc">'+esc(x.content)+'</div>'+imgHTML(x.shot_no)+'</div>';
+      +'</div><div class="pc">'+esc(x.content)+'</div>'
+      +(x.dialogue?'<div class="pd" style="background:rgba(95,191,122,.08);border-left:3px solid #5fbf7a;padding:6px 8px;border-radius:6px;margin-top:6px">🎙 '+esc(x.dialogue)+'</div>':'')
+      +imgHTML(x.shot_no,x.images)+'</div>';
   });
   document.getElementById('view-done').innerHTML=h||'<div class="empty">还没有已拍摄的镜头</div>';
 }
