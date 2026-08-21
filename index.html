@@ -16,11 +16,28 @@ header h1{font-size:17px;font-weight:700}header h1 b{color:var(--accent)}header 
 .card h3{font-size:15px;margin-bottom:6px}.th{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
 .tg{font-size:12px;padding:3px 8px;border-radius:6px;background:#0d1117;border:1px solid var(--line);color:var(--muted)}
 .tags{display:flex;flex-wrap:wrap;gap:5px}
+.timeline{position:relative;padding-left:26px}
+.timeline:before{content:'';position:absolute;left:9px;top:6px;bottom:6px;width:2px;background:linear-gradient(180deg,var(--line),#2a3a55 60%,var(--line))}
+.tl-item{position:relative;padding:0 0 16px}
+.tl-item:last-child{padding-bottom:2px}
+.tl-dot{position:absolute;left:-26px;top:4px;width:12px;height:12px;border-radius:50%;background:#0d1117;border:2px solid var(--muted);box-sizing:border-box}
+.tl-item.done .tl-dot{background:var(--green);border-color:var(--green)}
+.tl-item.now .tl-dot{background:var(--green);border-color:#8fe3ab;box-shadow:0 0 0 4px rgba(95,191,122,.18),0 0 14px rgba(95,191,122,.65)}
+.tl-item.now .tl-time{color:#8fe3ab}
+.tl-card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px 12px;transition:border-color .3s,box-shadow .3s}
+.tl-item.now .tl-card{border-color:rgba(95,191,122,.55);background:linear-gradient(180deg,rgba(95,191,122,.08),rgba(95,191,122,.02) 60%),var(--card);box-shadow:0 0 18px rgba(95,191,122,.16)}
+.tl-item.done .tl-card{opacity:.72}
+.tl-time{font-size:12px;font-weight:800;color:var(--muted);letter-spacing:.3px;margin-bottom:2px}
+.tl-title{font-size:13.5px;color:var(--text);line-height:1.45}
+.tl-meta{font-size:11.5px;color:var(--muted);margin-top:3px;display:flex;gap:10px;flex-wrap:wrap}
+.tl-meta span{display:inline-flex;align-items:center;gap:3px}
 .tl{font-size:12.5px;color:var(--muted);margin-top:4px}.tm{margin-left:auto;font-size:12px;color:var(--muted)}
 .bar{height:5px;background:#0d1117;border-radius:3px;margin:10px 0}.bar div{height:5px;background:var(--accent);border-radius:3px;transition:width .5s}
 .pc{font-size:14px;line-height:1.55}.pd{font-size:13px;color:var(--muted);margin-top:4px}.pl{border-left:4px solid var(--line)}
-.btn{background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:7px 12px;font-size:13px;cursor:pointer}
+.btn{background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:7px 12px;font-size:13px;cursor:pointer;white-space:nowrap}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:#1a1408;font-weight:700}
+.ic{width:14px;height:14px;vertical-align:-2px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:inline-block;flex:none}
+.ic-lg{width:16px;height:16px;vertical-align:-3px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:inline-block;flex:none}
 .btn.big{padding:11px 16px;font-size:14px;border-radius:10px}
 .btn:disabled{opacity:.5;cursor:wait}
 .btn.green{background:var(--green);border-color:var(--green);color:#08130b}
@@ -73,7 +90,7 @@ header h1{font-size:17px;font-weight:700}header h1 b{color:var(--accent)}header 
 <div class="sec" id="view-done" style="display:none"></div>
 <div class="sec" id="view-mat" style="display:none"></div>
 <div class="sec" id="view-tasks" style="display:none"></div>
-<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-21 22:44:45<br>操作自动写回云端，每20秒自动同步全场</div>
+<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-21 22:46:33<br>操作自动写回云端，每20秒自动同步全场</div>
 </div>
 <div class="toast" id="toast"></div>
 <script>
@@ -82,7 +99,36 @@ var SHOTS_DIR='huijing-shoot/shots'+(PID===3?'':String(PID));
 var SHOT_EXT='.jpg';
 var PROGRESS_URL='https://xinhuo-1300523387.cos.ap-guangzhou.myqcloud.com/huijing-shoot/progress-'+PID+'.json';
 var PUTURL_URL='https://xinhuo-1300523387.cos.ap-guangzhou.myqcloud.com/huijing-shoot/puturl-'+PID+'.json';
-var state={plan:[],tasks:[],takes:[],members:[]}, putUrl=null, ME=null, VIEW='home', busy=false, cfgOpen=false, noticeOpen=false, crewOpen=false;
+var ICONS={
+  home:'<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+  video:'<polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>',
+  check:'<polyline points="20 6 9 17 4 12"/>',
+  checkCircle:'<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
+  package:'<line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>',
+  calendar:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+  edit:'<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>',
+  users:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  list:'<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>',
+  fileText:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>',
+  mapPin:'<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>',
+  clock:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+  camera:'<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>',
+  flag:'<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>',
+  plus:'<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+  minus:'<line x1="5" y1="12" x2="19" y2="12"/>',
+  x:'<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+  xCircle:'<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>',
+  square:'<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>',
+  rotate:'<polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>',
+  dollar:'<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
+  mic:'<path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>',
+  film:'<rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/>',
+  save:'<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>',
+  trash:'<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+  arrowRight:'<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>',
+  chevronDown:'<polyline points="6 9 12 15 18 9"/>'
+};
+function ic(n,cls){return '<svg class="'+(cls||'ic')+'" viewBox="0 0 24 24">'+(ICONS[n]||'')+'</svg>';}
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 function toast(t){var e=document.getElementById('toast');e.textContent=t;e.style.display='block';clearTimeout(e._t);e._t=setTimeout(function(){e.style.display='none';},2600);}
 function saveMe(){
@@ -603,18 +649,32 @@ function renderHome(){
     +'<span style="font-size:20px;color:var(--muted)"> / </span>'+todo+'<span style="font-size:14px;color:var(--muted);font-weight:400"> 待拍</span></div>'
     +'<div class="progress-big" style="margin:10px 0"><div style="width:'+pct+'%"></div></div>'
     +'<div class="tl">总进度 '+pct+'%（'+plan.length+'镜）</div></div>';
-  h+='<h3 style="margin:14px 0 8px">📋 当日流程</h3>';
+  h+='<h3 style="margin:14px 0 8px">'+ic('list')+' 当日流程</h3>';
   if(!tasks.length)h+='<div class="empty">暂无排班</div>';
+  var nowMin=new Date().getHours()*60+new Date().getMinutes();
+  var foundNow=false;
+  h+='<div class="timeline">';
   tasks.forEach(function(t){
-    h+='<div style="display:flex;gap:10px;margin-bottom:10px"><div style="flex:0 0 88px;text-align:right;color:var(--accent);font-weight:700;font-size:12.5px;padding-top:2px">'+esc(t.time_slot)+'</div>'
-      +'<div style="border-left:2px solid var(--line);padding-left:10px">'
-      +'<div style="font-size:13.5px;line-height:1.5">'+esc(t.title)+'</div>'
-      +(t.location?'<div class="tl">📍 '+esc(t.location)+'</div>':'')
-      +((t.cast||[]).length?'<div class="tl">👤 '+esc((t.cast||[]).join('、'))+'</div>':'')
-      +'</div></div>';
+    var m=String(t.time_slot||'').match(/(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/);
+    var cls='';
+    if(m&&!foundNow){
+      var s=parseInt(m[1])*60+parseInt(m[2]), e=parseInt(m[3])*60+parseInt(m[4]);
+      if(nowMin>=e){cls='done';}
+      else if(nowMin>=s){cls='now';foundNow=true;}
+    }
+    h+='<div class="tl-item '+cls+'"><div class="tl-dot"></div>'
+      +'<div class="tl-card">'
+      +'<div class="tl-time">'+esc(t.time_slot)+'</div>'
+      +'<div class="tl-title">'+esc(t.title)+'</div>'
+      +'<div class="tl-meta">'
+      +(t.location?'<span>'+ic('mapPin')+' '+esc(t.location)+'</span>':'')
+      +((t.cast||[]).length?'<span>'+ic('users')+' '+esc((t.cast||[]).join('、'))+'</span>':'')
+      +(t.est_minutes?'<span>'+ic('clock')+' 约'+t.est_minutes+'分</span>':'')
+      +'</div></div></div>';
   });
+  h+='</div>';
   var remainN=plan.filter(function(x){return x.status!=='完成'&&x.status!=='素材';}).length;
-  h+=(isDir()?'<button type="button" class="btn primary big" style="width:100%;margin-top:4px'+(remainN?';opacity:.6':'')+'" onclick="finishShoot()">🎬 完成拍摄'+(remainN?'（剩'+remainN+'镜）':'')+'</button>':'');
+  h+=(isDir()?'<button type="button" class="btn primary big" style="width:100%;margin-top:4px'+(remainN?';opacity:.6':'')+'" onclick="finishShoot()">'+ic('flag')+' 完成拍摄'+(remainN?'（剩'+remainN+'镜）':'')+'</button>':'');
   document.getElementById('view-home').innerHTML=h;
 }
 function renderPlan(plan){
