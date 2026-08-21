@@ -72,7 +72,7 @@ header h1{font-size:17px;font-weight:700}header h1 b{color:var(--accent)}header 
 <div class="sec" id="view-done" style="display:none"></div>
 <div class="sec" id="view-mat" style="display:none"></div>
 <div class="sec" id="view-tasks" style="display:none"></div>
-<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-21 09:05:29<br>操作自动写回云端，每20秒自动同步全场</div>
+<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-21 09:16:09<br>操作自动写回云端，每20秒自动同步全场</div>
 </div>
 <div class="toast" id="toast"></div>
 <script>
@@ -270,7 +270,7 @@ function crewForm(){
     +'<div id="cw-rows">'+crew.map(function(x,i){
       return '<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center;flex-wrap:wrap">'
         +'<input placeholder="姓名" value="'+esc(x.name||'')+'" style="flex:1;min-width:70px;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 8px;font-size:12.5px" data-n="'+i+'">'
-        +'<select style="background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 4px;font-size:12px" data-r="'+i+'">'
+        +'<select style="background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 4px;font-size:12px" data-r="'+i+'" onchange="updateCamTip()">'
         +CREW_ROLES.map(function(r){return '<option'+(x.role===r?' selected':'')+'>'+r+'</option>';}).join('')+'</select>'
         +'<input placeholder="手机号" type="tel" value="'+esc(x.phone||'')+'" style="flex:1;min-width:90px;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 8px;font-size:12.5px" data-p="'+i+'">'
         +'<input placeholder="到场" value="'+esc(x.call||'')+'" style="width:56px;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 6px;font-size:12px" data-c="'+i+'">'
@@ -280,21 +280,29 @@ function crewForm(){
     +'<button class="btn" style="width:100%;margin-bottom:8px" onclick="addCrewRow()">＋ 添加行</button>'
     +'<div style="display:flex;gap:10px;margin:8px 0;align-items:center;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:10px">'
     +'<span style="font-size:13px;color:#8fd0ff;font-weight:700">🎥 机位</span>'
-    +'机位数<select id="cw-cams" style="background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:6px 8px">'
-    +[1,2,3,4,5,6,7,8,9,10].map(function(n){return '<option value="'+n+'"'+(cfg.cams.length===n?' selected':'')+'>'+n+'</option>';}).join('')+'</select>'
-    +'音频轨<select id="cw-audios" style="background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:6px 8px">'
+    +'<span id="cw-cam-tip" style="font-size:12px;color:var(--muted)"></span>'
+    +'<span style="font-size:13px;margin-left:4px">音频轨</span><select id="cw-audios" style="background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:6px 8px">'
     +[1,2,3].map(function(n){return '<option value="'+n+'"'+(cfg.audios===n?' selected':'')+'>'+n+'</option>';}).join('')+'</select>'
-    +'<span style="font-size:11px;color:var(--muted)">保存后所有分镜默认按此展开</span></div>'
+    +'<span style="font-size:11px;color:var(--muted)">机位按摄影人数自动分配</span></div>'
     +'<button class="btn primary big" style="width:100%" onclick="saveCrew()">✓ 保存团队配置</button>'
     +'<button class="btn big" style="width:100%;margin-top:6px" onclick="toggleCrew()">收起</button></div>';
+  setTimeout(updateCamTip,0);
   return h;
+}
+function updateCamTip(){
+  var tip=document.getElementById('cw-cam-tip');
+  if(!tip)return;
+  var n=0;
+  document.querySelectorAll('#cw-rows select[data-r]').forEach(function(s){if(s.value==='摄影')n++;});
+  var cams=[];for(var i=0;i<Math.max(n,1);i++)cams.push(String.fromCharCode(65+i)+'机');
+  tip.textContent='摄影 '+n+' 人 → '+cams.join('、');
 }
 function addCrewRow(role){
   var rows=document.getElementById('cw-rows');if(!rows)return;
   var i=rows.querySelectorAll('input[data-n]').length;
   rows.insertAdjacentHTML('beforeend','<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center;flex-wrap:wrap">'
     +'<input placeholder="姓名" style="flex:1;min-width:70px;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 8px;font-size:12.5px" data-n="'+i+'">'
-    +'<select style="background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 4px;font-size:12px" data-r="'+i+'">'
+    +'<select style="background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 4px;font-size:12px" data-r="'+i+'" onchange="updateCamTip()">'
     +CREW_ROLES.map(function(r){return '<option'+(role===r?' selected':'')+'>'+r+'</option>';}).join('')+'</select>'
     +'<input placeholder="手机号" type="tel" style="flex:1;min-width:90px;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 8px;font-size:12.5px" data-p="'+i+'">'
     +'<input placeholder="到场" style="width:60px;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 6px;font-size:12px" data-c="'+i+'">'
@@ -314,17 +322,14 @@ function saveCrew(){
     out.push({name:name,role:r?r.value:'成员',phone:(p&&p.value||'').trim(),call:(c&&c.value||'').trim()});
   });
   state.crew=out;
-  // 机位配置一并保存
-  var cc=document.getElementById('cw-cams');
+  // 机位=摄影人数自动分配（现场机位就是摄影）
+  var camN=out.filter(function(x){return x.role==='摄影';}).length;
+  var cams=[];for(var i=0;i<Math.max(camN,1);i++)cams.push(String.fromCharCode(65+i));
   var ca=document.getElementById('cw-audios');
-  if(cc){
-    var n=parseInt(cc.value||'3');
-    var cams=[];for(var i=0;i<n;i++)cams.push(String.fromCharCode(65+i));
-    state.media_cfg={cams:cams,audios:parseInt(ca?ca.value:'3')};
-  }
+  state.media_cfg={cams:cams,audios:parseInt(ca?ca.value:'3')};
   crewOpen=false;
   save();
-  toast('👥 团队配置已保存（'+out.length+'人），成员用姓名+手机号进入');
+  toast('👥 团队配置已保存（'+out.length+'人 · '+cams.length+'机位），成员用姓名+手机号进入');
 }
 function editCosts(){
   var c=state.costs||{labor:[],expense:[],post:[]};
