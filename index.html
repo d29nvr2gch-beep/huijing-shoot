@@ -71,14 +71,14 @@ header h1{font-size:17px;font-weight:700}header h1 b{color:var(--accent)}header 
 <div class="sec" id="view-done" style="display:none"></div>
 <div class="sec" id="view-mat" style="display:none"></div>
 <div class="sec" id="view-tasks" style="display:none"></div>
-<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-21 08:13:18<br>操作自动写回云端，每20秒自动同步全场</div>
+<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-21 08:23:51<br>操作自动写回云端，每20秒自动同步全场</div>
 </div>
 <div class="toast" id="toast"></div>
 <script>
 var PID=parseInt(new URLSearchParams(location.search).get('p')||'1')||1;
 var PROGRESS_URL='https://xinhuo-1300523387.cos.ap-guangzhou.myqcloud.com/huijing-shoot/progress-'+PID+'.json';
 var PUTURL_URL='https://xinhuo-1300523387.cos.ap-guangzhou.myqcloud.com/huijing-shoot/puturl-'+PID+'.json';
-var state={plan:[],tasks:[],takes:[],members:[]}, putUrl=null, ME=null, VIEW='home', busy=false;
+var state={plan:[],tasks:[],takes:[],members:[]}, putUrl=null, ME=null, VIEW='home', busy=false, cfgOpen=false;
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 function toast(t){var e=document.getElementById('toast');e.textContent=t;e.style.display='block';clearTimeout(e._t);e._t=setTimeout(function(){e.style.display='none';},2600);}
 function saveMe(){
@@ -188,6 +188,28 @@ function segImgs(title){
   });
   return urls.length? imgHTML(null,urls) : '';
 }
+function mediaCfg(){return state.media_cfg||{cams:['A','B','C'],audios:3};}
+function toggleCfg(){
+  cfgOpen=!cfgOpen;
+  var card=document.getElementById('cfg-card');
+  if(card){card.outerHTML=card.outerHTML;}
+  renderHome();
+}
+function cfgRows(){
+  var n=parseInt(document.getElementById('cfg-cams').value||'3');
+  var cfg=mediaCfg();
+  var sel=document.getElementById('cfg-cams');
+  sel.value=n;
+}
+function saveCfg(){
+  var n=parseInt(document.getElementById('cfg-cams').value||'3');
+  var a=parseInt(document.getElementById('cfg-audios').value||'3');
+  var cams=[];for(var i=0;i<n;i++)cams.push(String.fromCharCode(65+i));
+  state.media_cfg={cams:cams,audios:a};
+  cfgOpen=false;
+  save();
+  toast('🎥 机位配置已保存：'+n+'机位/'+a+'路收声');
+}
 function editMedia(id){
   if(!canMedia()){toast('只有导演/场记/摄影可录素材编号');return;}
   var it=state.plan.find(function(x){return x.id===id;});
@@ -200,55 +222,84 @@ function editMedia(id){
   }
   var card=document.getElementById('pl-'+id);
   if(!card)return;
+  var cfg=mediaCfg();
   var m=(it.media||[]).slice();
-  while(m.length<1)m.push({cam:'A',video:'',audio:''});
+  if(!m.length){
+    m=cfg.cams.map(function(c){return {cam:c,video:'',audio:''};});
+  }
   var h='<div class="me-box" id="me-box-'+id+'" style="margin-top:10px;background:#0d1117;border:1px solid #6fa8dc;border-radius:10px;padding:10px">'
-    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:13px;color:#8fd0ff;font-weight:700">🎥 素材编号</span>'
-    +'机位数<select id="me-cams-'+id+'" onchange="meRows('+id+')" style="background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:5px 8px"><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>'
-    +'<span style="font-size:11px;color:var(--muted)">几个机位录几次</span></div>'
+    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap"><span style="font-size:13px;color:#8fd0ff;font-weight:700">🎥 素材编号</span>'
+    +'<span style="font-size:11px;color:var(--muted)">默认'+cfg.cams.length+'机位/'+cfg.audios+'路收声，可增减</span>'
+    +'<button class="btn" style="padding:3px 10px;font-size:12px;margin-left:auto" onclick="meAddCam('+id+')">＋ 机位</button></div>'
     +'<div id="me-rows-'+id+'"></div>'
     +'<div style="display:flex;gap:8px;margin-top:8px"><button class="btn green" style="flex:1" onclick="meSave('+id+')">✓ 保存编号</button>'
     +'<button class="btn" style="flex:1" onclick="document.getElementById(\'me-box-'+id+'\').style.display=\'none\'">收起</button></div>'
     +'</div>';
   card.insertAdjacentHTML('beforeend',h);
-  var sel=document.getElementById('me-cams-'+id);
-  sel.value=String(Math.max(1,m.length));
   meRows(id);
 }
 function meRows(id){
   var rows=document.getElementById('me-rows-'+id);if(!rows)return;
-  var sel=document.getElementById('me-cams-'+id);
-  var n=parseInt(sel?sel.value:'1');
   var it=state.plan.find(function(x){return x.id===id;});
   var m=(it&&it.media||[]).slice();
-  while(m.length<n)m.push({cam:String.fromCharCode(65+m.length),video:'',audio:''});
-  m=m.slice(0,n);
+  if(!m.length)m=(mediaCfg().cams).map(function(c){return {cam:c,video:'',audio:''};});
+  var auds=mediaCfg().audios;
   rows.innerHTML=m.map(function(r,i){
-    return '<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">'
+    var audsArr=String(r.audio||'').split(';').filter(Boolean);
+    var inp='';
+    for(var k=0;k<auds;k++){
+      inp+='<input placeholder="音频'+(k+1)+' 如S0'+(k+1)+'" value="'+esc(audsArr[k]||'')+'" style="flex:1;min-width:70px;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 8px;font-size:12.5px" data-a="'+i+'_'+k+'">';
+    }
+    return '<div style="display:flex;gap:5px;margin-bottom:6px;align-items:center;flex-wrap:wrap" data-v="'+i+'">'
       +'<span class="tg">'+esc(r.cam)+'机</span>'
-      +'<input placeholder="视频编号 如A001" value="'+esc(r.video||'')+'" style="flex:1;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 8px;font-size:12.5px" data-v="'+i+'">'
-      +'<input placeholder="音频编号 如S01" value="'+esc(r.audio||'')+'" style="flex:1;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 8px;font-size:12.5px" data-a="'+i+'">'
+      +'<input placeholder="视频编号" value="'+esc(r.video||'')+'" style="flex:1;min-width:90px;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 8px;font-size:12.5px" data-v="'+i+'">'
+      +inp
+      +'<button class="btn" style="padding:4px 8px;font-size:11px;color:var(--red)" onclick="meDelRow('+id+','+i+')">−</button>'
       +'</div>';
   }).join('');
+}
+function meAddCam(id){
+  var it=state.plan.find(function(x){return x.id===id;});
+  if(!it)return;
+  var m=(it.media||[]).slice();
+  if(!m.length)m=(mediaCfg().cams).map(function(c){return {cam:c,video:'',audio:''};});
+  if(m.length>=10){toast('最多10个机位');return;}
+  m.push({cam:String.fromCharCode(65+m.length),video:'',audio:''});
+  it.media=m;
+  meRows(id);
+}
+function meDelRow(id,idx){
+  var it=state.plan.find(function(x){return x.id===id;});
+  if(!it)return;
+  var m=(it.media||[]).slice();
+  if(!m.length)m=(mediaCfg().cams).map(function(c){return {cam:c,video:'',audio:''};});
+  if(m.length<=1){toast('至少保留1个机位');return;}
+  m.splice(idx,1);
+  it.media=m;
+  meRows(id);
 }
 function meSave(id){
   var it=state.plan.find(function(x){return x.id===id;});
   if(!it)return;
-  var sel=document.getElementById('me-cams-'+id);
-  var n=parseInt(sel?sel.value:'1');
+  var rows=document.getElementById('me-rows-'+id);
+  if(!rows)return;
+  var items=rows.querySelectorAll('div[data-v]');
   var m=[];
-  for(var i=0;i<n;i++){
-    var v=document.querySelector('#me-rows-'+id+' input[data-v="'+i+'"]');
-    var a=document.querySelector('#me-rows-'+id+' input[data-a="'+i+'"]');
-    if(!v)continue;
-    var video=(v.value||'').trim(), audio=(a?a.value||'':'').trim();
-    if(video||audio)m.push({cam:String.fromCharCode(65+i),video:video,audio:audio});
-  }
+  items.forEach(function(row){
+    var i=row.getAttribute('data-v');
+    var cam=row.querySelector('.tg')?row.querySelector('.tg').textContent.replace('机',''):'';
+    var v=row.querySelector('input[data-v="'+i+'"]');
+    var auds=[];
+    row.querySelectorAll('input[data-a^="'+i+'_"]').forEach(function(a){var x=(a.value||'').trim();if(x)auds.push(x);});
+    if(!v)return;
+    var video=(v.value||'').trim();
+    if(video||auds.length)m.push({cam:cam||String.fromCharCode(65+m.length),video:video,audio:auds.join(';')});
+  });
   it.media=m;
   var box=document.getElementById('me-box-'+id);
   if(box)box.remove();
   save();
-  toast('🎥 素材编号已记录'+(m.length?('（'+m.length+'机位）'):'（已清空）'));
+  toast('🎥 素材编号已记录（'+m.length+'机位'+(m.length?' / '+(function(){var n=0;m.forEach(function(x){n+=String(x.audio||'').split(';').filter(Boolean).length;});return n+'路音频';})():'')+'）');
 }
 function copyMatList(){
   var mats=state.plan.filter(function(x){return x.status==='素材';});
@@ -300,6 +351,16 @@ function renderHome(){
   var todo=plan.length-done-mat;
   var pct=plan.length?Math.round((done+mat)/plan.length*100):0;
   var h='<div class="tl" style="margin-bottom:10px">📅 '+todayStr()+' · '+esc(ME.name)+'（'+esc(ME.role)+'）</div>'
+    +(isDir()?'<div class="card" id="cfg-card" style="padding:12px 14px;margin-bottom:10px"><div class="th"><span class="tg" style="color:#8fd0ff;font-weight:700">🎥 机位配置</span><span class="sp"></span>'
+      +'<button class="btn" style="padding:4px 12px;font-size:12.5px" onclick="toggleCfg()">'+(cfgOpen?'收起':'配置')+'</button></div>'
+      +(cfgOpen?'<div id="cfg-body"><div style="display:flex;gap:10px;margin:10px 0;align-items:center;flex-wrap:wrap">'
+        +'<span style="font-size:13px">机位数</span><select id="cfg-cams" onchange="cfgRows()" style="background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:6px 8px">'
+        +[1,2,3,4,5,6,7,8,9,10].map(function(n){return '<option value="'+n+'">'+n+' 机位</option>';}).join('')+'</select>'
+        +'<span style="font-size:13px">音频轨</span><select id="cfg-audios" style="background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:6px 8px">'
+        +[1,2,3].map(function(n){return '<option value="'+n+'">'+n+' 路收声</option>';}).join('')+'</select>'
+        +'<button class="btn primary" style="flex:1;min-width:120px" onclick="saveCfg()">✓ 保存配置</button></div>'
+        +'<div class="tl">保存后所有分镜默认按这些机位展开，每个分镜可自行增减</div></div>':'')
+      +'</div>':'')
     +'<div class="card" style="text-align:center;padding:16px">'
     +'<div style="font-size:30px;font-weight:800;color:var(--green)">'+done+'<span style="font-size:14px;color:var(--muted);font-weight:400"> 完成</span>'
     +'<span style="font-size:20px;color:var(--muted)"> / </span>'+mat+'<span style="font-size:14px;color:var(--muted);font-weight:400"> 素材</span>'
