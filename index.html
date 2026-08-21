@@ -72,12 +72,13 @@ header h1{font-size:17px;font-weight:700}header h1 b{color:var(--accent)}header 
 <div class="sec" id="view-done" style="display:none"></div>
 <div class="sec" id="view-mat" style="display:none"></div>
 <div class="sec" id="view-tasks" style="display:none"></div>
-<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-21 18:27:55<br>操作自动写回云端，每20秒自动同步全场</div>
+<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-21 18:30:19<br>操作自动写回云端，每20秒自动同步全场</div>
 </div>
 <div class="toast" id="toast"></div>
 <script>
 var PID=parseInt(new URLSearchParams(location.search).get('p')||'1')||1;
 var SHOTS_DIR='huijing-shoot/shots'+(PID===3?'':String(PID));
+var SHOT_EXT=PID===3?'.jpg':'.png';
 var PROGRESS_URL='https://xinhuo-1300523387.cos.ap-guangzhou.myqcloud.com/huijing-shoot/progress-'+PID+'.json';
 var PUTURL_URL='https://xinhuo-1300523387.cos.ap-guangzhou.myqcloud.com/huijing-shoot/puturl-'+PID+'.json';
 var state={plan:[],tasks:[],takes:[],members:[]}, putUrl=null, ME=null, VIEW='home', busy=false, cfgOpen=false, noticeOpen=false, crewOpen=false;
@@ -175,7 +176,7 @@ function stLabel(s){return s==='素材'?'📦 素材':s;}
 function imgHTML(shotNo, imgs){
   var list=(imgs&&imgs.length)?imgs:(function(){
     var m=String(shotNo||'').match(/镜(\d+)/);
-    return m?['https://xinhuo-1300523387.cos.ap-guangzhou.myqcloud.com/'+SHOTS_DIR+'/镜'+('00'+m[1]).slice(-2)+'.jpg']:[];
+    return m?['https://xinhuo-1300523387.cos.ap-guangzhou.myqcloud.com/'+SHOTS_DIR+'/镜'+('00'+m[1]).slice(-2)+SHOT_EXT]:[];
   })();
   if(!list.length)return '';
   if(list.length===1){
@@ -689,7 +690,7 @@ function shotGridHTML(shots){
   var urls=[];
   shots.slice(0,6).forEach(function(s){
     var m=String(s.shot_no||'').match(/镜(\d+)/);
-    if(m)urls.push('https://xinhuo-1300523387.cos.ap-guangzhou.myqcloud.com/'+SHOTS_DIR+'/镜'+('00'+m[1]).slice(-2)+'.jpg');
+    if(m)urls.push('https://xinhuo-1300523387.cos.ap-guangzhou.myqcloud.com/'+SHOTS_DIR+'/镜'+('00'+m[1]).slice(-2)+SHOT_EXT);
   });
   return urls.length?imgHTML(null,urls):'';
 }
