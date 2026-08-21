@@ -71,7 +71,7 @@ header h1{font-size:17px;font-weight:700}header h1 b{color:var(--accent)}header 
 <div class="sec" id="view-done" style="display:none"></div>
 <div class="sec" id="view-mat" style="display:none"></div>
 <div class="sec" id="view-tasks" style="display:none"></div>
-<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-21 08:44:05<br>操作自动写回云端，每20秒自动同步全场</div>
+<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-21 08:53:08<br>操作自动写回云端，每20秒自动同步全场</div>
 </div>
 <div class="toast" id="toast"></div>
 <script>
@@ -245,8 +245,66 @@ function finishShoot(){
   if(pw!=='Mm944714'){toast('❌ 口令错误');return;}
   editCosts();
 }
+var CREW_ROLES=['导演','场记','摄影','灯光','妆造','道具','后期','制片','录音','助理','群演'];
+var EXP_PRESETS=['盒饭','打车','道具','场地','服装','器材租赁','临时演员','化妆耗材','打印物料','停车费'];
+function editCrew(){
+  if(!isDir()){toast('只有导演可配置团队');return;}
+  var crew=(state.crew||[]).slice();
+  if(!crew.length)crew=[{name:'',role:'导演',call:''}];
+  var html='<div class="mask" id="cw-mask" onclick="if(event.target===this)this.remove()"><div class="box" style="max-width:360px;max-height:85vh;overflow-y:auto">'
+    +'<h3 style="margin-bottom:6px">👥 现场团队配置</h3>'
+    +'<div class="tl" style="margin-bottom:8px">点工种预设添加成员：</div>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">'+CREW_ROLES.map(function(r){
+      return '<span class="role-chip" onclick="addCrewRow(\''+r+'\')">＋ '+r+'</span>';
+    }).join('')+'</div>'
+    +'<div id="cw-rows">'+crew.map(function(x,i){
+      return '<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">'
+        +'<input placeholder="姓名" value="'+esc(x.name||'')+'" style="flex:1;min-width:70px;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 8px;font-size:12.5px" data-n="'+i+'">'
+        +'<select style="background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 4px;font-size:12px" data-r="'+i+'">'
+        +CREW_ROLES.map(function(r){return '<option'+(x.role===r?' selected':'')+'>'+r+'</option>';}).join('')+'</select>'
+        +'<input placeholder="到场" value="'+esc(x.call||'')+'" style="width:64px;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 6px;font-size:12px" data-c="'+i+'">'
+        +'<button class="btn" style="padding:4px 8px;font-size:11px;color:var(--red)" onclick="this.parentNode.remove()">−</button>'
+        +'</div>';
+    }).join('')+'</div>'
+    +'<button class="btn" style="width:100%;margin-bottom:8px" onclick="addCrewRow()">＋ 添加行</button>'
+    +'<button class="btn primary big" style="width:100%" onclick="saveCrew()">✓ 保存团队</button>'
+    +'<button class="btn big" style="width:100%;margin-top:6px" onclick="document.getElementById(\'cw-mask\').remove()">取消</button>'
+    +'</div></div>';
+  document.body.insertAdjacentHTML('beforeend',html);
+}
+function addCrewRow(role){
+  var rows=document.getElementById('cw-rows');if(!rows)return;
+  var i=rows.querySelectorAll('input[data-n]').length;
+  rows.insertAdjacentHTML('beforeend','<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">'
+    +'<input placeholder="姓名" style="flex:1;min-width:70px;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 8px;font-size:12.5px" data-n="'+i+'">'
+    +'<select style="background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 4px;font-size:12px" data-r="'+i+'">'
+    +CREW_ROLES.map(function(r){return '<option'+(role===r?' selected':'')+'>'+r+'</option>';}).join('')+'</select>'
+    +'<input placeholder="到场" style="width:64px;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 6px;font-size:12px" data-c="'+i+'">'
+    +'<button class="btn" style="padding:4px 8px;font-size:11px;color:var(--red)" onclick="this.parentNode.remove()">−</button>'
+    +'</div>');
+}
+function saveCrew(){
+  var out=[];
+  document.querySelectorAll('#cw-rows div').forEach(function(row){
+    var n=row.querySelector('input[data-n]');
+    var r=row.querySelector('select[data-r]');
+    var c=row.querySelector('input[data-c]');
+    if(!n)return;
+    var name=(n.value||'').trim();
+    if(!name)return;
+    out.push({name:name,role:r?r.value:'成员',call:(c&&c.value||'').trim()});
+  });
+  state.crew=out;
+  document.getElementById('cw-mask').remove();
+  save();
+  toast('👥 团队已保存（'+out.length+'人）');
+}
 function editCosts(){
   var c=state.costs||{labor:[],expense:[],post:[]};
+  // 自动拉取当天团队生成劳务行（未填过时）
+  if(!c.labor.length&&(state.crew||[]).length){
+    c.labor=state.crew.map(function(m){return {name:m.name||'',role:m.role||'',amount:0};});
+  }
   var rowHtml=function(list,type,icon,ph1,ph2){
     return '<div id="'+type+'-rows">'+list.map(function(x,i){
       return '<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">'
@@ -260,12 +318,25 @@ function editCosts(){
   var html='<div class="mask" id="cs-mask" onclick="if(event.target===this)this.remove()"><div class="box" style="max-width:360px;max-height:85vh;overflow-y:auto">'
     +'<h3 style="margin-bottom:8px">💰 项目结算（仅导演可见）</h3>'
     +'<div class="tl" style="font-weight:700;color:var(--muted);margin-bottom:6px">👤 成员劳务费</div>'+rowHtml(c.labor,'labor','👤','成员姓名','金额')
-    +'<div class="tl" style="font-weight:700;color:var(--muted);margin-bottom:6px">🧾 报销</div>'+rowHtml(c.expense,'expense','🧾','报销项目（如 餐费/打车）','金额')
+    +'<div class="tl" style="font-weight:700;color:var(--muted);margin-bottom:6px">🧾 报销</div>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">'+EXP_PRESETS.map(function(p){
+      return '<span class="role-chip" onclick="addExpPreset(\''+p+'\')">＋ '+p+'</span>';
+    }).join('')+'</div>'
+    +rowHtml(c.expense,'expense','🧾','报销项目','金额')
     +'<div class="tl" style="font-weight:700;color:var(--muted);margin-bottom:6px">🎬 制作费（后期等）</div>'+rowHtml(c.post,'post','🎬','费用项目（如 剪辑/音乐）','金额')
     +'<button class="btn primary big" style="width:100%" onclick="saveCosts()">✓ 保存结算</button>'
     +'<button class="btn big" style="width:100%;margin-top:6px" onclick="document.getElementById(\'cs-mask\').remove()">取消</button>'
     +'</div></div>';
   document.body.insertAdjacentHTML('beforeend',html);
+}
+function addExpPreset(name){
+  var rows=document.getElementById('expense-rows');
+  if(!rows)return;
+  var i=rows.querySelectorAll('input[data-n]').length;
+  rows.insertAdjacentHTML('beforeend','<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">'
+    +'<input placeholder="报销项目" value="'+esc(name)+'" style="flex:1;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 8px;font-size:12.5px" data-n="expense_'+i+'">'
+    +'<input placeholder="金额" type="number" style="width:80px;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 8px;font-size:12.5px" data-a="expense_'+i+'">'
+    +'</div>');
 }
 function addCostRow(type){
   var rows=document.getElementById(type+'-rows');
@@ -478,10 +549,12 @@ function renderHome(){
     +(state.notice&&state.notice.location?'<div class="tl">📍 场地：'+esc(state.notice.location)+'</div>':'')
     +(state.notice&&state.notice.note?'<div class="tl">📝 '+esc(state.notice.note)+'</div>':'')
     +'</div>'
-    +'<div class="card" style="padding:12px 14px"><div class="th"><span class="tg" style="font-weight:700;font-size:13.5px">👥 项目成员（'+((state.members||[]).length)+'人）</span></div>'
-    +((state.members||[]).length?'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">'+state.members.map(function(m){
-      return '<span class="role-chip">'+esc(m.name)+' · '+esc((m.roles||[]).join('/')||'成员')+'</span>';
-    }).join('')+'</div>':'<div class="tl" style="margin-top:6px">暂无成员，稍后在成员列表加入</div>')
+    +'<div class="card" style="padding:12px 14px"><div class="th"><span class="tg" style="font-weight:700;font-size:13.5px">👥 现场团队（'+((state.crew||[]).length)+'人）</span>'
+    +(isDir()?'<button class="btn" style="padding:4px 12px;font-size:12.5px;margin-left:auto" onclick="editCrew()">✏️ 配置</button>':'')
+    +'</div>'
+    +((state.crew||[]).length?'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">'+state.crew.map(function(m){
+      return '<span class="role-chip">'+esc(m.name||'未命名')+' · '+esc(m.role||'成员')+(m.call?' · 🕗'+esc(m.call):'')+'</span>';
+    }).join('')+'</div>':'<div class="tl" style="margin-top:6px">'+(isDir()?'点击「✏️ 配置」添加今天团队成员':'暂无团队配置')+'</div>')
     +'</div>'
     +(isDir()?'<div class="card" id="cfg-card" style="padding:12px 14px;margin-bottom:10px"><div class="th"><span class="tg" style="color:#8fd0ff;font-weight:700">🎥 机位配置</span><span class="sp"></span>'
       +'<button class="btn" style="padding:4px 12px;font-size:12.5px" onclick="toggleCfg()">'+(cfgOpen?'收起':'配置')+'</button></div>'
