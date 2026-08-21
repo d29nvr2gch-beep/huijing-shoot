@@ -71,7 +71,7 @@ header h1{font-size:17px;font-weight:700}header h1 b{color:var(--accent)}header 
 <div class="sec" id="view-done" style="display:none"></div>
 <div class="sec" id="view-mat" style="display:none"></div>
 <div class="sec" id="view-tasks" style="display:none"></div>
-<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-21 08:31:09<br>操作自动写回云端，每20秒自动同步全场</div>
+<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-21 08:31:45<br>操作自动写回云端，每20秒自动同步全场</div>
 </div>
 <div class="toast" id="toast"></div>
 <script>
@@ -494,16 +494,15 @@ function renderHome(){
     +'<span style="font-size:20px;color:var(--muted)"> / </span>'+todo+'<span style="font-size:14px;color:var(--muted);font-weight:400"> 待拍</span></div>'
     +'<div class="progress-big" style="margin:10px 0"><div style="width:'+pct+'%"></div></div>'
     +'<div class="tl">总进度 '+pct+'%（'+plan.length+'镜）</div></div>';
-  h+='<h3 style="margin:14px 0 8px">📋 今日通告单</h3>';
+  h+='<h3 style="margin:14px 0 8px">📋 当日流程</h3>';
   if(!tasks.length)h+='<div class="empty">暂无排班</div>';
   tasks.forEach(function(t){
-    h+='<div class="card" style="padding:11px 14px"><div class="th">'
-      +'<span class="tg" style="color:var(--accent);font-weight:700">'+esc(t.time_slot)+'</span>'
-      +(t.location?'<span class="tg">📍'+esc(t.location)+'</span>':'')
-      +'</div><div class="pc" style="font-size:13.5px">'+esc(t.title)+'</div>'
-      +segImgs(t.title)
+    h+='<div style="display:flex;gap:10px;margin-bottom:10px"><div style="flex:0 0 88px;text-align:right;color:var(--accent);font-weight:700;font-size:12.5px;padding-top:2px">'+esc(t.time_slot)+'</div>'
+      +'<div style="border-left:2px solid var(--line);padding-left:10px">'
+      +'<div style="font-size:13.5px;line-height:1.5">'+esc(t.title)+'</div>'
+      +(t.location?'<div class="tl">📍 '+esc(t.location)+'</div>':'')
       +((t.cast||[]).length?'<div class="tl">👤 '+esc((t.cast||[]).join('、'))+'</div>':'')
-      +'</div>';
+      +'</div></div>';
   });
   h+='<h3 style="margin:14px 0 8px">📝 脚本（只读）</h3>';
   var seen={}, segs=[];
