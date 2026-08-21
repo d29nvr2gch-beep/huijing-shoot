@@ -71,7 +71,7 @@ header h1{font-size:17px;font-weight:700}header h1 b{color:var(--accent)}header 
 <div class="sec" id="view-done" style="display:none"></div>
 <div class="sec" id="view-mat" style="display:none"></div>
 <div class="sec" id="view-tasks" style="display:none"></div>
-<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-21 08:23:51<br>操作自动写回云端，每20秒自动同步全场</div>
+<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-21 08:31:09<br>操作自动写回云端，每20秒自动同步全场</div>
 </div>
 <div class="toast" id="toast"></div>
 <script>
@@ -189,6 +189,116 @@ function segImgs(title){
   return urls.length? imgHTML(null,urls) : '';
 }
 function mediaCfg(){return state.media_cfg||{cams:['A','B','C'],audios:3};}
+function costsCard(){
+  var c=state.costs||{labor:[],expense:[],post:[]};
+  var t=function(list){return list.reduce(function(s,x){return s+parseFloat(x.amount||0);},0);};
+  var total=t(c.labor)+t(c.expense)+t(c.post);
+  var rows=function(list,icon){return list.map(function(x){
+    return '<div class="tl" style="display:flex;justify-content:space-between;gap:8px">'
+      +'<span>'+icon+' '+esc(x.name||x.item||'')+(x.role?'（'+esc(x.role)+'）':'')+(x.note?' · '+esc(x.note):'')+'</span>'
+      +'<b style="color:var(--green)">¥'+parseFloat(x.amount||0).toFixed(0)+'</b></div>';
+  }).join('');};
+  return '<div class="card" style="padding:12px 14px;border-left:4px solid var(--accent)"><div class="th">'
+    +'<span class="tg" style="font-weight:700;font-size:13.5px">💰 项目结算（仅导演可见）</span>'
+    +'<button class="btn" style="padding:4px 12px;font-size:12.5px;margin-left:auto" onclick="editCosts()">✏️ 填写</button>'
+    +'</div>'
+    +(c.labor.length?'<div class="tl" style="margin-top:8px;font-weight:700;color:var(--muted)">👤 劳务费（'+(c.labor.length)+'人）</div>'+rows(c.labor,'👤'):'<div class="tl" style="margin-top:8px;color:var(--muted)">👤 劳务费：未填写</div>')
+    +(c.expense.length?'<div class="tl" style="margin-top:8px;font-weight:700;color:var(--muted)">🧾 报销（'+(c.expense.length)+'项）</div>'+rows(c.expense,'🧾'):'<div class="tl" style="margin-top:8px;color:var(--muted)">🧾 报销：未填写</div>')
+    +(c.post.length?'<div class="tl" style="margin-top:8px;font-weight:700;color:var(--muted)">🎬 制作费（'+(c.post.length)+'项）</div>'+rows(c.post,'🎬'):'<div class="tl" style="margin-top:8px;color:var(--muted)">🎬 制作费：未填写</div>')
+    +'<div class="tl" style="margin-top:10px;border-top:1px solid var(--line);padding-top:8px;display:flex;justify-content:space-between"><span>合计</span><b style="font-size:16px;color:var(--green)">¥'+total.toFixed(0)+'</b></div>'
+    +'</div>';
+}
+function editNotice(){
+  var n=state.notice||{};
+  var html='<div class="mask" id="nt-mask" onclick="if(event.target===this)this.remove()"><div class="box" style="max-width:340px">'
+    +'<h3 style="margin-bottom:10px">📋 项目信息</h3>'
+    +'<input id="nt-name" placeholder="项目名称" value="'+esc(n.name||'')+'" style="width:100%;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:9px 10px;font-size:14px;margin-bottom:8px;box-sizing:border-box">'
+    +'<input id="nt-date" placeholder="拍摄日期 如 8月22日" value="'+esc(n.date||'')+'" style="width:100%;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:9px 10px;font-size:14px;margin-bottom:8px;box-sizing:border-box">'
+    +'<div style="display:flex;gap:8px;margin-bottom:8px"><input id="nt-call" placeholder="集合时间" value="'+esc(n.call||'')+'" style="flex:1;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:9px 10px;font-size:14px"><input id="nt-start" placeholder="开拍时间" value="'+esc(n.start||'')+'" style="flex:1;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:9px 10px;font-size:14px"></div>'
+    +'<input id="nt-producer" placeholder="制片人" value="'+esc(n.producer||'')+'" style="width:100%;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:9px 10px;font-size:14px;margin-bottom:8px;box-sizing:border-box">'
+    +'<input id="nt-director" placeholder="导演" value="'+esc(n.director||'')+'" style="width:100%;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:9px 10px;font-size:14px;margin-bottom:8px;box-sizing:border-box">'
+    +'<input id="nt-location" placeholder="拍摄场地" value="'+esc(n.location||'')+'" style="width:100%;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:9px 10px;font-size:14px;margin-bottom:8px;box-sizing:border-box">'
+    +'<textarea id="nt-note" placeholder="备注（注意事项等）" style="width:100%;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:9px 10px;font-size:13px;margin-bottom:10px;box-sizing:border-box;min-height:50px">'+esc(n.note||'')+'</textarea>'
+    +'<button class="btn primary big" style="width:100%" onclick="saveNotice()">✓ 保存</button>'
+    +'<button class="btn big" style="width:100%;margin-top:6px" onclick="document.getElementById(\'nt-mask\').remove()">取消</button>'
+    +'</div></div>';
+  document.body.insertAdjacentHTML('beforeend',html);
+}
+function saveNotice(){
+  state.notice={
+    name:document.getElementById('nt-name').value.trim(),
+    date:document.getElementById('nt-date').value.trim(),
+    call:document.getElementById('nt-call').value.trim(),
+    start:document.getElementById('nt-start').value.trim(),
+    producer:document.getElementById('nt-producer').value.trim(),
+    director:document.getElementById('nt-director').value.trim(),
+    location:document.getElementById('nt-location').value.trim(),
+    note:document.getElementById('nt-note').value.trim(),
+  };
+  document.getElementById('nt-mask').remove();
+  save();
+  toast('📋 项目信息已保存');
+}
+function editCosts(){
+  var c=state.costs||{labor:[],expense:[],post:[]};
+  var rowHtml=function(list,type,icon,ph1,ph2){
+    return '<div id="'+type+'-rows">'+list.map(function(x,i){
+      return '<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">'
+        +'<input placeholder="'+ph1+'" value="'+esc(x.name||x.item||'')+'" style="flex:1;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 8px;font-size:12.5px" data-n="'+type+'_'+i+'">'
+        +'<input placeholder="金额" type="number" value="'+esc(x.amount||'')+'" style="width:80px;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 8px;font-size:12.5px" data-a="'+type+'_'+i+'">'
+        +(type==='labor'?'<input placeholder="工种" value="'+esc(x.role||'')+'" style="width:80px;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 8px;font-size:12.5px" data-r="'+type+'_'+i+'">':'')
+        +'</div>';
+    }).join('')+'</div>'
+    +'<button class="btn" style="padding:4px 10px;font-size:12px;margin-bottom:10px" onclick="addCostRow(\''+type+'\')">＋ 添加</button>';
+  };
+  var html='<div class="mask" id="cs-mask" onclick="if(event.target===this)this.remove()"><div class="box" style="max-width:360px;max-height:85vh;overflow-y:auto">'
+    +'<h3 style="margin-bottom:8px">💰 项目结算（仅导演可见）</h3>'
+    +'<div class="tl" style="font-weight:700;color:var(--muted);margin-bottom:6px">👤 成员劳务费</div>'+rowHtml(c.labor,'labor','👤','成员姓名','金额')
+    +'<div class="tl" style="font-weight:700;color:var(--muted);margin-bottom:6px">🧾 报销</div>'+rowHtml(c.expense,'expense','🧾','报销项目（如 餐费/打车）','金额')
+    +'<div class="tl" style="font-weight:700;color:var(--muted);margin-bottom:6px">🎬 制作费（后期等）</div>'+rowHtml(c.post,'post','🎬','费用项目（如 剪辑/音乐）','金额')
+    +'<button class="btn primary big" style="width:100%" onclick="saveCosts()">✓ 保存结算</button>'
+    +'<button class="btn big" style="width:100%;margin-top:6px" onclick="document.getElementById(\'cs-mask\').remove()">取消</button>'
+    +'</div></div>';
+  document.body.insertAdjacentHTML('beforeend',html);
+}
+function addCostRow(type){
+  var rows=document.getElementById(type+'-rows');
+  if(!rows)return;
+  var i=rows.querySelectorAll('input[data-n]').length;
+  rows.insertAdjacentHTML('beforeend','<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">'
+    +'<input placeholder="'+(type==='labor'?'成员姓名':(type==='expense'?'报销项目':'费用项目'))+'" style="flex:1;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 8px;font-size:12.5px" data-n="'+type+'_'+i+'">'
+    +'<input placeholder="金额" type="number" style="width:80px;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 8px;font-size:12.5px" data-a="'+type+'_'+i+'">'
+    +(type==='labor'?'<input placeholder="工种" style="width:80px;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 8px;font-size:12.5px" data-r="'+type+'_'+i+'">':'')
+    +'</div>');
+}
+function saveCosts(){
+  var collect=function(type,keys){
+    var out=[];
+    document.querySelectorAll('#'+type+'-rows input[data-n]').forEach(function(inp){
+      var i=inp.getAttribute('data-n').split('_')[1];
+      var a=document.querySelector('#'+type+'-rows input[data-a="'+type+'_'+i+'"]');
+      var amount=parseFloat(a?a.value:0)||0;
+      var name=(inp.value||'').trim();
+      if(!name&&!amount)return;
+      var item={name:name,amount:amount};
+      if(keys.indexOf('role')>=0){
+        var r=document.querySelector('#'+type+'-rows input[data-r="'+type+'_'+i+'"]');
+        item.role=r?(r.value||'').trim():'';
+      }
+      out.push(item);
+    });
+    return out;
+  };
+  state.costs={
+    labor:collect('labor',['role']),
+    expense:collect('expense',[]),
+    post:collect('post',[]),
+  };
+  document.getElementById('cs-mask').remove();
+  save();
+  var total=state.costs.labor.reduce(function(s,x){return s+x.amount;},0)+state.costs.expense.reduce(function(s,x){return s+x.amount;},0)+state.costs.post.reduce(function(s,x){return s+x.amount;},0);
+  toast('💰 结算已保存，合计 ¥'+total.toFixed(0));
+}
 function toggleCfg(){
   cfgOpen=!cfgOpen;
   var card=document.getElementById('cfg-card');
@@ -351,6 +461,23 @@ function renderHome(){
   var todo=plan.length-done-mat;
   var pct=plan.length?Math.round((done+mat)/plan.length*100):0;
   var h='<div class="tl" style="margin-bottom:10px">📅 '+todayStr()+' · '+esc(ME.name)+'（'+esc(ME.role)+'）</div>'
+    +'<div class="card" style="padding:12px 14px"><div class="th">'
+    +'<span class="tg" style="font-weight:700;font-size:13.5px">📋 项目信息</span>'
+    +(isDir()?'<button class="btn" style="padding:4px 12px;font-size:12.5px;margin-left:auto" onclick="editNotice()">✏️ 编辑</button>':'')
+    +'</div>'
+    +'<div class="pc" style="font-size:14px;margin-top:6px">'+(state.notice&&state.notice.name?esc(state.notice.name):esc(state.name||''))+'</div>'
+    +'<div class="tl">📅 '+(state.notice&&state.notice.date||'待填日期')+'　🕗 集合 '+(state.notice&&state.notice.call||'—')+'　🎬 开拍 '+(state.notice&&state.notice.start||'—')+'</div>'
+    +(state.notice&&state.notice.producer?'<div class="tl">🎞 制片：'+esc(state.notice.producer)+'</div>':'')
+    +(state.notice&&state.notice.director?'<div class="tl">🎥 导演：'+esc(state.notice.director)+'</div>':'')
+    +(state.notice&&state.notice.location?'<div class="tl">📍 场地：'+esc(state.notice.location)+'</div>':'')
+    +(state.notice&&state.notice.note?'<div class="tl">📝 '+esc(state.notice.note)+'</div>':'')
+    +'</div>'
+    +'<div class="card" style="padding:12px 14px"><div class="th"><span class="tg" style="font-weight:700;font-size:13.5px">👥 项目成员（'+((state.members||[]).length)+'人）</span></div>'
+    +((state.members||[]).length?'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">'+state.members.map(function(m){
+      return '<span class="role-chip">'+esc(m.name)+' · '+esc((m.roles||[]).join('/')||'成员')+'</span>';
+    }).join('')+'</div>':'<div class="tl" style="margin-top:6px">暂无成员，稍后在成员列表加入</div>')
+    +'</div>'
+    +(isDir()?costsCard():'')
     +(isDir()?'<div class="card" id="cfg-card" style="padding:12px 14px;margin-bottom:10px"><div class="th"><span class="tg" style="color:#8fd0ff;font-weight:700">🎥 机位配置</span><span class="sp"></span>'
       +'<button class="btn" style="padding:4px 12px;font-size:12.5px" onclick="toggleCfg()">'+(cfgOpen?'收起':'配置')+'</button></div>'
       +(cfgOpen?'<div id="cfg-body"><div style="display:flex;gap:10px;margin:10px 0;align-items:center;flex-wrap:wrap">'
