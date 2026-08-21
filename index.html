@@ -71,7 +71,7 @@ header h1{font-size:17px;font-weight:700}header h1 b{color:var(--accent)}header 
 <div class="sec" id="view-done" style="display:none"></div>
 <div class="sec" id="view-mat" style="display:none"></div>
 <div class="sec" id="view-tasks" style="display:none"></div>
-<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-20 23:03:41<br>操作自动写回云端，每20秒自动同步全场</div>
+<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-21 08:13:18<br>操作自动写回云端，每20秒自动同步全场</div>
 </div>
 <div class="toast" id="toast"></div>
 <script>
@@ -192,26 +192,35 @@ function editMedia(id){
   if(!canMedia()){toast('只有导演/场记/摄影可录素材编号');return;}
   var it=state.plan.find(function(x){return x.id===id;});
   if(!it)return;
+  var box=document.getElementById('me-box-'+id);
+  if(box){
+    box.style.display=(box.style.display==='none')?'block':'none';
+    if(box.style.display==='block')meRows(id);
+    return;
+  }
+  var card=document.getElementById('pl-'+id);
+  if(!card)return;
   var m=(it.media||[]).slice();
   while(m.length<1)m.push({cam:'A',video:'',audio:''});
-  var html='<div class="mask" id="md-mask" onclick="if(event.target===this)this.remove()"><div class="box" style="max-width:340px">'
-    +'<h3 style="margin-bottom:8px">🎥 素材编号 · '+esc(it.shot_no)+'</h3>'
-    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">机位数：'
-    +'<select id="md-cams" onchange="mdRows()"><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>'
-    +'<span style="font-size:11.5px;color:var(--muted)">几个机位录几次</span></div>'
-    +'<div id="md-rows"></div>'
-    +'<button class="btn primary big" style="width:100%;margin-top:10px" onclick="mdSave('+id+')">保存编号</button>'
-    +'<button class="btn big" style="width:100%;margin-top:6px" onclick="document.getElementById(\'md-mask\').remove()">取消</button>'
-    +'</div></div>';
-  document.body.insertAdjacentHTML('beforeend',html);
-  var sel=document.getElementById('md-cams');
+  var h='<div class="me-box" id="me-box-'+id+'" style="margin-top:10px;background:#0d1117;border:1px solid #6fa8dc;border-radius:10px;padding:10px">'
+    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:13px;color:#8fd0ff;font-weight:700">🎥 素材编号</span>'
+    +'机位数<select id="me-cams-'+id+'" onchange="meRows('+id+')" style="background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:5px 8px"><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>'
+    +'<span style="font-size:11px;color:var(--muted)">几个机位录几次</span></div>'
+    +'<div id="me-rows-'+id+'"></div>'
+    +'<div style="display:flex;gap:8px;margin-top:8px"><button class="btn green" style="flex:1" onclick="meSave('+id+')">✓ 保存编号</button>'
+    +'<button class="btn" style="flex:1" onclick="document.getElementById(\'me-box-'+id+'\').style.display=\'none\'">收起</button></div>'
+    +'</div>';
+  card.insertAdjacentHTML('beforeend',h);
+  var sel=document.getElementById('me-cams-'+id);
   sel.value=String(Math.max(1,m.length));
-  mdRows(m);
+  meRows(id);
 }
-function mdRows(init){
-  var rows=document.getElementById('md-rows');if(!rows)return;
-  var n=parseInt(document.getElementById('md-cams').value||'1');
-  var m=init||[];
+function meRows(id){
+  var rows=document.getElementById('me-rows-'+id);if(!rows)return;
+  var sel=document.getElementById('me-cams-'+id);
+  var n=parseInt(sel?sel.value:'1');
+  var it=state.plan.find(function(x){return x.id===id;});
+  var m=(it&&it.media||[]).slice();
   while(m.length<n)m.push({cam:String.fromCharCode(65+m.length),video:'',audio:''});
   m=m.slice(0,n);
   rows.innerHTML=m.map(function(r,i){
@@ -221,22 +230,23 @@ function mdRows(init){
       +'<input placeholder="音频编号 如S01" value="'+esc(r.audio||'')+'" style="flex:1;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 8px;font-size:12.5px" data-a="'+i+'">'
       +'</div>';
   }).join('');
-  window._md= m;
 }
-function mdSave(id){
+function meSave(id){
   var it=state.plan.find(function(x){return x.id===id;});
   if(!it)return;
-  var n=parseInt(document.getElementById('md-cams').value||'1');
+  var sel=document.getElementById('me-cams-'+id);
+  var n=parseInt(sel?sel.value:'1');
   var m=[];
   for(var i=0;i<n;i++){
-    var v=document.querySelector('#md-rows input[data-v="'+i+'"]');
-    var a=document.querySelector('#md-rows input[data-a="'+i+'"]');
+    var v=document.querySelector('#me-rows-'+id+' input[data-v="'+i+'"]');
+    var a=document.querySelector('#me-rows-'+id+' input[data-a="'+i+'"]');
     if(!v)continue;
     var video=(v.value||'').trim(), audio=(a?a.value||'':'').trim();
     if(video||audio)m.push({cam:String.fromCharCode(65+i),video:video,audio:audio});
   }
   it.media=m;
-  document.getElementById('md-mask').remove();
+  var box=document.getElementById('me-box-'+id);
+  if(box)box.remove();
   save();
   toast('🎥 素材编号已记录'+(m.length?('（'+m.length+'机位）'):'（已清空）'));
 }
@@ -331,7 +341,7 @@ function renderPlan(plan){
   h+='<div class="tl" style="margin-bottom:10px">🎯 待拍摄 '+todo.length+' 镜 · 已完成 '+plan.filter(function(x){return x.status==='完成';}).length+' 镜 · 📦素材 '+plan.filter(function(x){return x.status==='素材';}).length+' 镜</div>';
   todo.forEach(function(x){
     var sc=stColor(x.status);
-    h+='<div class="card pl" style="border-left:4px solid '+sc+'">'
+    h+='<div class="card pl" id="pl-'+x.id+'" style="border-left:4px solid '+sc+'">'
       +imgHTML(x.shot_no,x.images)
       +'<div class="th" style="margin-top:10px">'
       +'<span class="tg">'+esc(x.shot_no)+'</span><span class="tg">'+esc(x.shot_type||'')+'</span>'
@@ -359,7 +369,7 @@ function renderMat(plan){
   var h='<div class="tl" style="margin-bottom:10px">📦 素材提供 '+mats.length+' 镜（用素材剪辑的镜头都在这里；「✓ 完成」=素材已提供）</div>'
     +'<div style="display:flex;gap:8px;margin-bottom:10px"><button class="btn" style="flex:1" onclick="copyMatList()">📋 复制素材清单</button></div>';
   mats.forEach(function(x){
-    h+='<div class="card" style="border-left:4px solid #6fa8dc">'
+    h+='<div class="card" id="pl-'+x.id+'" style="border-left:4px solid #6fa8dc">'
       +imgHTML(x.shot_no,x.images)
       +'<div class="th" style="margin-top:10px">'
       +'<span class="tg">'+esc(x.shot_no)+'</span><span class="tg">'+esc(x.shot_type||'')+'</span>'
@@ -382,7 +392,7 @@ function renderDone(plan){
   done.forEach(function(x){
     var isMat=x.status==='素材';
     var sc=isMat?'#6fa8dc':'#5fbf7a';
-    h+='<div class="card" style="border-left:4px solid '+sc+';opacity:.92">'
+    h+='<div class="card" id="pl-'+x.id+'" style="border-left:4px solid '+sc+';opacity:.92">'
       +imgHTML(x.shot_no,x.images)
       +'<div class="th" style="margin-top:10px">'
       +'<span class="tg">'+esc(x.shot_no)+'</span><span class="tg">'+esc(x.shot_type||'')+'</span>'
