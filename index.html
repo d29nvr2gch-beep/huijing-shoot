@@ -72,14 +72,14 @@ header h1{font-size:17px;font-weight:700}header h1 b{color:var(--accent)}header 
 <div class="sec" id="view-done" style="display:none"></div>
 <div class="sec" id="view-mat" style="display:none"></div>
 <div class="sec" id="view-tasks" style="display:none"></div>
-<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-21 09:02:51<br>操作自动写回云端，每20秒自动同步全场</div>
+<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-21 09:05:29<br>操作自动写回云端，每20秒自动同步全场</div>
 </div>
 <div class="toast" id="toast"></div>
 <script>
 var PID=parseInt(new URLSearchParams(location.search).get('p')||'1')||1;
 var PROGRESS_URL='https://xinhuo-1300523387.cos.ap-guangzhou.myqcloud.com/huijing-shoot/progress-'+PID+'.json';
 var PUTURL_URL='https://xinhuo-1300523387.cos.ap-guangzhou.myqcloud.com/huijing-shoot/puturl-'+PID+'.json';
-var state={plan:[],tasks:[],takes:[],members:[]}, putUrl=null, ME=null, VIEW='home', busy=false, cfgOpen=false;
+var state={plan:[],tasks:[],takes:[],members:[]}, putUrl=null, ME=null, VIEW='home', busy=false, cfgOpen=false, noticeOpen=false, crewOpen=false;
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 function toast(t){var e=document.getElementById('toast');e.textContent=t;e.style.display='block';clearTimeout(e._t);e._t=setTimeout(function(){e.style.display='none';},2600);}
 function saveMe(){
@@ -222,34 +222,30 @@ function costsCard(){
     +'<div class="tl" style="margin-top:10px;border-top:1px solid var(--line);padding-top:8px;display:flex;justify-content:space-between"><span>合计</span><b style="font-size:16px;color:var(--green)">¥'+total.toFixed(0)+'</b></div>'
     +'</div>';
 }
-function editNotice(){
+function toggleNotice(){noticeOpen=!noticeOpen;renderHome();}
+function noticeForm(){
   var n=state.notice||{};
-  var html='<div class="mask" id="nt-mask" onclick="if(event.target===this)this.remove()"><div class="box" style="max-width:340px">'
-    +'<h3 style="margin-bottom:10px">📋 项目信息</h3>'
-    +'<input id="nt-name" placeholder="项目名称" value="'+esc(n.name||'')+'" style="width:100%;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:9px 10px;font-size:14px;margin-bottom:8px;box-sizing:border-box">'
-    +'<input id="nt-date" placeholder="拍摄日期 如 8月22日" value="'+esc(n.date||'')+'" style="width:100%;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:9px 10px;font-size:14px;margin-bottom:8px;box-sizing:border-box">'
-    +'<div style="display:flex;gap:8px;margin-bottom:8px"><input id="nt-call" placeholder="集合时间" value="'+esc(n.call||'')+'" style="flex:1;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:9px 10px;font-size:14px"><input id="nt-start" placeholder="开拍时间" value="'+esc(n.start||'')+'" style="flex:1;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:9px 10px;font-size:14px"></div>'
-    +'<input id="nt-producer" placeholder="制片人" value="'+esc(n.producer||'')+'" style="width:100%;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:9px 10px;font-size:14px;margin-bottom:8px;box-sizing:border-box">'
-    +'<input id="nt-director" placeholder="导演" value="'+esc(n.director||'')+'" style="width:100%;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:9px 10px;font-size:14px;margin-bottom:8px;box-sizing:border-box">'
-    +'<input id="nt-location" placeholder="拍摄场地" value="'+esc(n.location||'')+'" style="width:100%;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:9px 10px;font-size:14px;margin-bottom:8px;box-sizing:border-box">'
-    +'<textarea id="nt-note" placeholder="备注（注意事项等）" style="width:100%;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:9px 10px;font-size:13px;margin-bottom:10px;box-sizing:border-box;min-height:50px">'+esc(n.note||'')+'</textarea>'
-    +'<button class="btn primary big" style="width:100%" onclick="saveNotice()">✓ 保存</button>'
-    +'<button class="btn big" style="width:100%;margin-top:6px" onclick="document.getElementById(\'nt-mask\').remove()">取消</button>'
-    +'</div></div>';
-  document.body.insertAdjacentHTML('beforeend',html);
+  var inp='<input id="ntf-name" placeholder="项目名称" value="'+esc(n.name||'')+'" style="width:100%;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 10px;font-size:13px;margin-top:8px;box-sizing:border-box">'
+    +'<div style="display:flex;gap:6px;margin-top:6px"><input id="ntf-date" placeholder="日期 如8月22日" value="'+esc(n.date||'')+'" style="flex:1;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 10px;font-size:13px"><input id="ntf-call" placeholder="集合" value="'+esc(n.call||'')+'" style="flex:1;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 10px;font-size:13px"><input id="ntf-start" placeholder="开拍" value="'+esc(n.start||'')+'" style="flex:1;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 10px;font-size:13px"></div>'
+    +'<div style="display:flex;gap:6px;margin-top:6px"><input id="ntf-producer" placeholder="制片人" value="'+esc(n.producer||'')+'" style="flex:1;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 10px;font-size:13px"><input id="ntf-director" placeholder="导演" value="'+esc(n.director||'')+'" style="flex:1;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 10px;font-size:13px"></div>'
+    +'<input id="ntf-location" placeholder="拍摄场地" value="'+esc(n.location||'')+'" style="width:100%;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 10px;font-size:13px;margin-top:6px;box-sizing:border-box">'
+    +'<textarea id="ntf-note" placeholder="备注" style="width:100%;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 10px;font-size:12.5px;margin-top:6px;box-sizing:border-box;min-height:40px">'+esc(n.note||'')+'</textarea>';
+  return '<div style="border-top:1px solid var(--line);margin-top:10px;padding-top:10px">'+inp
+    +'<button class="btn primary big" style="width:100%;margin-top:8px" onclick="saveNotice()">✓ 保存</button>'
+    +'<button class="btn big" style="width:100%;margin-top:6px" onclick="toggleNotice()">收起</button></div>';
 }
 function saveNotice(){
   state.notice={
-    name:document.getElementById('nt-name').value.trim(),
-    date:document.getElementById('nt-date').value.trim(),
-    call:document.getElementById('nt-call').value.trim(),
-    start:document.getElementById('nt-start').value.trim(),
-    producer:document.getElementById('nt-producer').value.trim(),
-    director:document.getElementById('nt-director').value.trim(),
-    location:document.getElementById('nt-location').value.trim(),
-    note:document.getElementById('nt-note').value.trim(),
+    name:document.getElementById('ntf-name').value.trim(),
+    date:document.getElementById('ntf-date').value.trim(),
+    call:document.getElementById('ntf-call').value.trim(),
+    start:document.getElementById('ntf-start').value.trim(),
+    producer:document.getElementById('ntf-producer').value.trim(),
+    director:document.getElementById('ntf-director').value.trim(),
+    location:document.getElementById('ntf-location').value.trim(),
+    note:document.getElementById('ntf-note').value.trim(),
   };
-  document.getElementById('nt-mask').remove();
+  noticeOpen=false;
   save();
   toast('📋 项目信息已保存');
 }
@@ -261,12 +257,12 @@ function finishShoot(){
 }
 var CREW_ROLES=['导演','场记','摄影','灯光','妆造','道具','后期','制片','录音','助理','群演'];
 var EXP_PRESETS=['盒饭','打车','道具','场地','服装','器材租赁','临时演员','化妆耗材','打印物料','停车费'];
-function editCrew(){
-  if(!isDir()){toast('只有导演可配置团队');return;}
+function toggleCrew(){crewOpen=!crewOpen;renderHome();}
+function crewForm(){
   var crew=(state.crew||[]).slice();
-  if(!crew.length)crew=[{name:'',role:'导演',call:''}];
-  var html='<div class="mask" id="cw-mask" onclick="if(event.target===this)this.remove()"><div class="box" style="max-width:360px;max-height:85vh;overflow-y:auto">'
-    +'<h3 style="margin-bottom:6px">👥 现场团队配置</h3>'
+  if(!crew.length)crew=[{name:'',role:'导演',phone:'',call:''}];
+  var cfg=mediaCfg();
+  var h='<div style="border-top:1px solid var(--line);margin-top:10px;padding-top:10px">'
     +'<div class="tl" style="margin-bottom:8px">点工种预设添加成员：</div>'
     +'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">'+CREW_ROLES.map(function(r){
       return '<span class="role-chip" onclick="addCrewRow(\''+r+'\')">＋ '+r+'</span>';
@@ -277,15 +273,21 @@ function editCrew(){
         +'<select style="background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 4px;font-size:12px" data-r="'+i+'">'
         +CREW_ROLES.map(function(r){return '<option'+(x.role===r?' selected':'')+'>'+r+'</option>';}).join('')+'</select>'
         +'<input placeholder="手机号" type="tel" value="'+esc(x.phone||'')+'" style="flex:1;min-width:90px;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 8px;font-size:12.5px" data-p="'+i+'">'
-        +'<input placeholder="到场" value="'+esc(x.call||'')+'" style="width:60px;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 6px;font-size:12px" data-c="'+i+'">'
+        +'<input placeholder="到场" value="'+esc(x.call||'')+'" style="width:56px;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 6px;font-size:12px" data-c="'+i+'">'
         +'<button class="btn" style="padding:4px 8px;font-size:11px;color:var(--red)" onclick="this.parentNode.remove()">−</button>'
         +'</div>';
     }).join('')+'</div>'
     +'<button class="btn" style="width:100%;margin-bottom:8px" onclick="addCrewRow()">＋ 添加行</button>'
-    +'<button class="btn primary big" style="width:100%" onclick="saveCrew()">✓ 保存团队</button>'
-    +'<button class="btn big" style="width:100%;margin-top:6px" onclick="document.getElementById(\'cw-mask\').remove()">取消</button>'
-    +'</div></div>';
-  document.body.insertAdjacentHTML('beforeend',html);
+    +'<div style="display:flex;gap:10px;margin:8px 0;align-items:center;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:10px">'
+    +'<span style="font-size:13px;color:#8fd0ff;font-weight:700">🎥 机位</span>'
+    +'机位数<select id="cw-cams" style="background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:6px 8px">'
+    +[1,2,3,4,5,6,7,8,9,10].map(function(n){return '<option value="'+n+'"'+(cfg.cams.length===n?' selected':'')+'>'+n+'</option>';}).join('')+'</select>'
+    +'音频轨<select id="cw-audios" style="background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:6px 8px">'
+    +[1,2,3].map(function(n){return '<option value="'+n+'"'+(cfg.audios===n?' selected':'')+'>'+n+'</option>';}).join('')+'</select>'
+    +'<span style="font-size:11px;color:var(--muted)">保存后所有分镜默认按此展开</span></div>'
+    +'<button class="btn primary big" style="width:100%" onclick="saveCrew()">✓ 保存团队配置</button>'
+    +'<button class="btn big" style="width:100%;margin-top:6px" onclick="toggleCrew()">收起</button></div>';
+  return h;
 }
 function addCrewRow(role){
   var rows=document.getElementById('cw-rows');if(!rows)return;
@@ -312,9 +314,17 @@ function saveCrew(){
     out.push({name:name,role:r?r.value:'成员',phone:(p&&p.value||'').trim(),call:(c&&c.value||'').trim()});
   });
   state.crew=out;
-  document.getElementById('cw-mask').remove();
+  // 机位配置一并保存
+  var cc=document.getElementById('cw-cams');
+  var ca=document.getElementById('cw-audios');
+  if(cc){
+    var n=parseInt(cc.value||'3');
+    var cams=[];for(var i=0;i<n;i++)cams.push(String.fromCharCode(65+i));
+    state.media_cfg={cams:cams,audios:parseInt(ca?ca.value:'3')};
+  }
+  crewOpen=false;
   save();
-  toast('👥 团队已保存（'+out.length+'人），成员用姓名+手机号进入');
+  toast('👥 团队配置已保存（'+out.length+'人），成员用姓名+手机号进入');
 }
 function editCosts(){
   var c=state.costs||{labor:[],expense:[],post:[]};
@@ -555,9 +565,9 @@ function renderHome(){
   var todo=plan.length-done-mat;
   var pct=plan.length?Math.round((done+mat)/plan.length*100):0;
   var h='<div class="tl" style="margin-bottom:10px">📅 '+todayStr()+' · '+esc(ME.name)+'（'+esc(ME.role)+'）</div>'
-    +'<div class="card" style="padding:12px 14px"><div class="th">'
+    +'<div class="card" id="notice-card" style="padding:12px 14px"><div class="th">'
     +'<span class="tg" style="font-weight:700;font-size:13.5px">📋 项目信息</span>'
-    +(isDir()?'<button class="btn" style="padding:4px 12px;font-size:12.5px;margin-left:auto" onclick="editNotice()">✏️ 编辑</button>':'')
+    +(isDir()?'<button class="btn" style="padding:4px 12px;font-size:12.5px;margin-left:auto" onclick="toggleNotice()">'+(noticeOpen?'收起':'✏️ 编辑')+'</button>':'')
     +'</div>'
     +'<div class="pc" style="font-size:14px;margin-top:6px">'+(state.notice&&state.notice.name?esc(state.notice.name):esc(state.name||''))+'</div>'
     +'<div class="tl">📅 '+(state.notice&&state.notice.date||'待填日期')+'　🕗 集合 '+(state.notice&&state.notice.call||'—')+'　🎬 开拍 '+(state.notice&&state.notice.start||'—')+'</div>'
@@ -565,24 +575,16 @@ function renderHome(){
     +(state.notice&&state.notice.director?'<div class="tl">🎥 导演：'+esc(state.notice.director)+'</div>':'')
     +(state.notice&&state.notice.location?'<div class="tl">📍 场地：'+esc(state.notice.location)+'</div>':'')
     +(state.notice&&state.notice.note?'<div class="tl">📝 '+esc(state.notice.note)+'</div>':'')
+    +(noticeOpen?noticeForm():'')
     +'</div>'
-    +'<div class="card" style="padding:12px 14px"><div class="th"><span class="tg" style="font-weight:700;font-size:13.5px">👥 现场团队（'+((state.crew||[]).length)+'人）</span>'
-    +(isDir()?'<button class="btn" style="padding:4px 12px;font-size:12.5px;margin-left:auto" onclick="editCrew()">✏️ 配置</button>':'')
+    +'<div class="card" id="crew-card" style="padding:12px 14px"><div class="th"><span class="tg" style="font-weight:700;font-size:13.5px">👥 现场团队（'+((state.crew||[]).length)+'人）</span>'
+    +(isDir()?'<button class="btn" style="padding:4px 12px;font-size:12.5px;margin-left:auto" onclick="toggleCrew()">'+(crewOpen?'收起':'✏️ 配置')+'</button>':'')
     +'</div>'
     +((state.crew||[]).length?'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">'+state.crew.map(function(m){
-      return '<span class="role-chip">'+esc(m.name||'未命名')+' · '+esc(m.role||'成员')+(m.call?' · 🕗'+esc(m.call):'')+'</span>';
-    }).join('')+'</div>':'<div class="tl" style="margin-top:6px">'+(isDir()?'点击「✏️ 配置」添加今天团队成员':'暂无团队配置')+'</div>')
+      return '<span class="role-chip">'+esc(m.name||'未命名')+' · '+esc(m.role||'成员')+(m.phone?' · '+esc(m.phone):'')+(m.call?' · 🕗'+esc(m.call):'')+'</span>';
+    }).join('')+'</div>':'<div class="tl" style="margin-top:6px">'+(isDir()?'点击「✏️ 配置」添加今天团队成员（含机位）':'暂无团队配置')+'</div>')
+    +(crewOpen?crewForm():'')
     +'</div>'
-    +(isDir()?'<div class="card" id="cfg-card" style="padding:12px 14px;margin-bottom:10px"><div class="th"><span class="tg" style="color:#8fd0ff;font-weight:700">🎥 机位配置</span><span class="sp"></span>'
-      +'<button class="btn" style="padding:4px 12px;font-size:12.5px" onclick="toggleCfg()">'+(cfgOpen?'收起':'配置')+'</button></div>'
-      +(cfgOpen?'<div id="cfg-body"><div style="display:flex;gap:10px;margin:10px 0;align-items:center;flex-wrap:wrap">'
-        +'<span style="font-size:13px">机位数</span><select id="cfg-cams" onchange="cfgRows()" style="background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:6px 8px">'
-        +[1,2,3,4,5,6,7,8,9,10].map(function(n){return '<option value="'+n+'">'+n+' 机位</option>';}).join('')+'</select>'
-        +'<span style="font-size:13px">音频轨</span><select id="cfg-audios" style="background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:6px 8px">'
-        +[1,2,3].map(function(n){return '<option value="'+n+'">'+n+' 路收声</option>';}).join('')+'</select>'
-        +'<button class="btn primary" style="flex:1;min-width:120px" onclick="saveCfg()">✓ 保存配置</button></div>'
-        +'<div class="tl">保存后所有分镜默认按这些机位展开，每个分镜可自行增减</div></div>':'')
-      +'</div>':'')
     +'<div class="card" style="text-align:center;padding:16px">'
     +'<div style="font-size:30px;font-weight:800;color:var(--green)">'+done+'<span style="font-size:14px;color:var(--muted);font-weight:400"> 完成</span>'
     +'<span style="font-size:20px;color:var(--muted)"> / </span>'+mat+'<span style="font-size:14px;color:var(--muted);font-weight:400"> 素材</span>'
