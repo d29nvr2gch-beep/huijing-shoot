@@ -71,7 +71,7 @@ header h1{font-size:17px;font-weight:700}header h1 b{color:var(--accent)}header 
 <div class="sec" id="view-done" style="display:none"></div>
 <div class="sec" id="view-mat" style="display:none"></div>
 <div class="sec" id="view-tasks" style="display:none"></div>
-<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-21 08:34:56<br>操作自动写回云端，每20秒自动同步全场</div>
+<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-21 08:39:29<br>操作自动写回云端，每20秒自动同步全场</div>
 </div>
 <div class="toast" id="toast"></div>
 <script>
@@ -238,6 +238,12 @@ function saveNotice(){
   document.getElementById('nt-mask').remove();
   save();
   toast('📋 项目信息已保存');
+}
+function finishShoot(){
+  if(!confirm('确认今天拍摄已全部完成？\n将进入项目结算填写（劳务/报销/制作费）。'))return;
+  var pw=prompt('🔒 结算仅导演可填，请输入口令：');
+  if(pw!=='Mm944714'){toast('❌ 口令错误');return;}
+  editCosts();
 }
 function editCosts(){
   var c=state.costs||{labor:[],expense:[],post:[]};
@@ -477,7 +483,7 @@ function renderHome(){
       return '<span class="role-chip">'+esc(m.name)+' · '+esc((m.roles||[]).join('/')||'成员')+'</span>';
     }).join('')+'</div>':'<div class="tl" style="margin-top:6px">暂无成员，稍后在成员列表加入</div>')
     +'</div>'
-    +(isDir()?costsCard():'')
+    +(isDir()?'<button class="btn primary big" style="width:100%;margin:0 0 10px" onclick="finishShoot()">🎬 完成拍摄 · 结算</button>':'')
     +(isDir()?'<div class="card" id="cfg-card" style="padding:12px 14px;margin-bottom:10px"><div class="th"><span class="tg" style="color:#8fd0ff;font-weight:700">🎥 机位配置</span><span class="sp"></span>'
       +'<button class="btn" style="padding:4px 12px;font-size:12.5px" onclick="toggleCfg()">'+(cfgOpen?'收起':'配置')+'</button></div>'
       +(cfgOpen?'<div id="cfg-body"><div style="display:flex;gap:10px;margin:10px 0;align-items:center;flex-wrap:wrap">'
