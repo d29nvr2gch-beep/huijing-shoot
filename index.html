@@ -71,7 +71,7 @@ header h1{font-size:17px;font-weight:700}header h1 b{color:var(--accent)}header 
 <div class="sec" id="view-done" style="display:none"></div>
 <div class="sec" id="view-mat" style="display:none"></div>
 <div class="sec" id="view-tasks" style="display:none"></div>
-<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-21 08:31:45<br>操作自动写回云端，每20秒自动同步全场</div>
+<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-21 08:34:56<br>操作自动写回云端，每20秒自动同步全场</div>
 </div>
 <div class="toast" id="toast"></div>
 <script>
@@ -503,21 +503,6 @@ function renderHome(){
       +(t.location?'<div class="tl">📍 '+esc(t.location)+'</div>':'')
       +((t.cast||[]).length?'<div class="tl">👤 '+esc((t.cast||[]).join('、'))+'</div>':'')
       +'</div></div>';
-  });
-  h+='<h3 style="margin:14px 0 8px">📝 脚本（只读）</h3>';
-  var seen={}, segs=[];
-  plan.forEach(function(x){
-    var k=x.scene_no||'';
-    if(k&&!seen[k]){seen[k]=1;segs.push(x);}
-  });
-  segs.sort(function(a,b){return (a.scene_no||'').localeCompare(b.scene_no||'',undefined,{numeric:true});});
-  if(!segs.length){h+='<div class="empty">暂无脚本</div>';}
-  segs.forEach(function(x){
-    h+='<div class="card" style="padding:11px 14px"><div class="th"><span class="tg">'+esc(x.scene_no||x.shot_no)+'</span>'
-      +'<span class="tg">'+esc(x.shot_type||'')+'</span></div>'
-      +'<div class="pc" style="font-size:13.5px">'+esc(x.content||'')+'</div>'
-      +(x.dialogue?'<div class="pd" style="background:rgba(232,199,127,.08);border-left:3px solid var(--accent);padding:6px 8px;border-radius:6px;margin-top:6px">🎙 '+esc(x.dialogue)+'</div>':'')
-      +'</div>';
   });
   document.getElementById('view-home').innerHTML=h;
 }
