@@ -50,10 +50,11 @@ header h1{font-size:17px;font-weight:700}header h1 b{color:var(--accent)}header 
 <div id="app">
 <header><h1>会<b>镜</b>·拍摄执行</h1><span class="pill">云端协作版</span><span class="sp"></span><span class="live" id="live">● 实时</span></header>
 <div class="sec me" id="me-bar"><span style="color:var(--muted);font-size:13px">我是：</span>
-<input id="me-name" placeholder="昵称" style="width:110px">
-<select id="me-role"><option value="">—选工种—</option><option>导演</option><option>场记</option><option>摄影</option><option>灯光</option><option>妆造</option><option>道具</option><option>后期</option><option>甲方</option></select>
+<input id="me-name" placeholder="姓名" style="width:100px">
+<input id="me-phone" placeholder="手机号" type="tel" style="width:110px">
 <button class="btn primary" onclick="saveMe()">进入</button>
-<span style="font-size:12px;color:var(--muted)">（已进入可点右上角刷新身份）</span></div>
+<button class="btn" onclick="dirEntry()" style="font-size:12px;color:var(--accent)">导演通道</button>
+<span style="font-size:12px;color:var(--muted)">（成员填姓名+手机号；甲方填 8888）</span></div>
 <div class="sec" style="display:flex;align-items:center;gap:10px">
 <div class="pill" style="flex:1">进度 <b style="color:var(--green)" id="done">0</b>/<span id="total">0</span> 镜</div>
 </div>
@@ -71,7 +72,7 @@ header h1{font-size:17px;font-weight:700}header h1 b{color:var(--accent)}header 
 <div class="sec" id="view-done" style="display:none"></div>
 <div class="sec" id="view-mat" style="display:none"></div>
 <div class="sec" id="view-tasks" style="display:none"></div>
-<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-21 08:53:08<br>操作自动写回云端，每20秒自动同步全场</div>
+<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-08-21 09:02:51<br>操作自动写回云端，每20秒自动同步全场</div>
 </div>
 <div class="toast" id="toast"></div>
 <script>
@@ -82,17 +83,30 @@ var state={plan:[],tasks:[],takes:[],members:[]}, putUrl=null, ME=null, VIEW='ho
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 function toast(t){var e=document.getElementById('toast');e.textContent=t;e.style.display='block';clearTimeout(e._t);e._t=setTimeout(function(){e.style.display='none';},2600);}
 function saveMe(){
-  var n=document.getElementById('me-name').value.trim(), r=document.getElementById('me-role').value;
-  if(!n){toast('先输入昵称');return;}
-  if((r==='导演'||r==='场记'||r==='摄影')&&localStorage.getItem('hjcloud_ok')!=='1'){
-    var pw=prompt('🔒 导演/场记操作需要口令：');
-    if(pw!=='Mm944714'){toast('❌ 口令错误');return;}
-    try{localStorage.setItem('hjcloud_ok','1');}catch(e){}
-    toast('🔓 口令验证通过');
-  }
-  ME={name:n,role:r};
+  var n=document.getElementById('me-name').value.trim();
+  var ph=(document.getElementById('me-phone').value||'').trim();
+  if(!n&&!ph){toast('请输入姓名或手机号');return;}
+  // 甲方：8888 直接进入（只读）
+  if(ph==='8888'){enterMe(n||'甲方', '甲方', ph);return;}
+  // 成员：姓名+手机号 匹配导演配置的团队
+  var crew=state.crew||[];
+  var m=crew.find(function(x){return x.phone&&String(x.phone).trim()===ph;});
+  if(m){enterMe(m.name||n, m.role||'成员', ph);return;}
+  var byName=crew.find(function(x){return x.name&&x.name.trim()===n;});
+  if(byName){enterMe(n, byName.role||'成员', ph||(byName.phone||''));return;}
+  toast('❌ 未找到：'+n+(ph?'/'+ph:'')+'，请确认导演已把你加入今日团队；甲方输入 8888');
+}
+function dirEntry(){
+  var pw=prompt('🔒 导演通道口令：');
+  if(pw!=='Mm944714'){toast('❌ 口令错误');return;}
+  var n=document.getElementById('me-name').value.trim()||'导演';
+  enterMe(n,'导演','');
+  toast('🎬 以导演身份进入（可配置团队）');
+}
+function enterMe(name,role,phone){
+  ME={name:name,role:role,phone:phone};
   try{localStorage.setItem('hjcloud_me',JSON.stringify(ME));}catch(e){}
-  render();toast('已进入：'+n+(r?'（'+r+'）':''));
+  render();toast('已进入：'+name+(role?'（'+role+'）':''));
 }
 function showTab(v,el){
   VIEW=v;
@@ -258,11 +272,12 @@ function editCrew(){
       return '<span class="role-chip" onclick="addCrewRow(\''+r+'\')">＋ '+r+'</span>';
     }).join('')+'</div>'
     +'<div id="cw-rows">'+crew.map(function(x,i){
-      return '<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">'
+      return '<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center;flex-wrap:wrap">'
         +'<input placeholder="姓名" value="'+esc(x.name||'')+'" style="flex:1;min-width:70px;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 8px;font-size:12.5px" data-n="'+i+'">'
         +'<select style="background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 4px;font-size:12px" data-r="'+i+'">'
         +CREW_ROLES.map(function(r){return '<option'+(x.role===r?' selected':'')+'>'+r+'</option>';}).join('')+'</select>'
-        +'<input placeholder="到场" value="'+esc(x.call||'')+'" style="width:64px;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 6px;font-size:12px" data-c="'+i+'">'
+        +'<input placeholder="手机号" type="tel" value="'+esc(x.phone||'')+'" style="flex:1;min-width:90px;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 8px;font-size:12.5px" data-p="'+i+'">'
+        +'<input placeholder="到场" value="'+esc(x.call||'')+'" style="width:60px;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 6px;font-size:12px" data-c="'+i+'">'
         +'<button class="btn" style="padding:4px 8px;font-size:11px;color:var(--red)" onclick="this.parentNode.remove()">−</button>'
         +'</div>';
     }).join('')+'</div>'
@@ -275,11 +290,12 @@ function editCrew(){
 function addCrewRow(role){
   var rows=document.getElementById('cw-rows');if(!rows)return;
   var i=rows.querySelectorAll('input[data-n]').length;
-  rows.insertAdjacentHTML('beforeend','<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">'
+  rows.insertAdjacentHTML('beforeend','<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center;flex-wrap:wrap">'
     +'<input placeholder="姓名" style="flex:1;min-width:70px;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 8px;font-size:12.5px" data-n="'+i+'">'
     +'<select style="background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 4px;font-size:12px" data-r="'+i+'">'
     +CREW_ROLES.map(function(r){return '<option'+(role===r?' selected':'')+'>'+r+'</option>';}).join('')+'</select>'
-    +'<input placeholder="到场" style="width:64px;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 6px;font-size:12px" data-c="'+i+'">'
+    +'<input placeholder="手机号" type="tel" style="flex:1;min-width:90px;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 8px;font-size:12.5px" data-p="'+i+'">'
+    +'<input placeholder="到场" style="width:60px;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 6px;font-size:12px" data-c="'+i+'">'
     +'<button class="btn" style="padding:4px 8px;font-size:11px;color:var(--red)" onclick="this.parentNode.remove()">−</button>'
     +'</div>');
 }
@@ -288,16 +304,17 @@ function saveCrew(){
   document.querySelectorAll('#cw-rows div').forEach(function(row){
     var n=row.querySelector('input[data-n]');
     var r=row.querySelector('select[data-r]');
+    var p=row.querySelector('input[data-p]');
     var c=row.querySelector('input[data-c]');
     if(!n)return;
     var name=(n.value||'').trim();
     if(!name)return;
-    out.push({name:name,role:r?r.value:'成员',call:(c&&c.value||'').trim()});
+    out.push({name:name,role:r?r.value:'成员',phone:(p&&p.value||'').trim(),call:(c&&c.value||'').trim()});
   });
   state.crew=out;
   document.getElementById('cw-mask').remove();
   save();
-  toast('👥 团队已保存（'+out.length+'人）');
+  toast('👥 团队已保存（'+out.length+'人），成员用姓名+手机号进入');
 }
 function editCosts(){
   var c=state.costs||{labor:[],expense:[],post:[]};
@@ -696,7 +713,7 @@ function renderSlate(plan,takes){
 // 初始化
 (function(){
   try{var m=JSON.parse(localStorage.getItem('hjcloud_me')||'null');if(m&&m.name)ME=m;}catch(e){}
-  if(ME){document.getElementById('me-name').value=ME.name;document.getElementById('me-role').value=ME.role||'';}
+  if(ME){document.getElementById('me-name').value=ME.name||'';document.getElementById('me-phone').value=ME.phone||'';}
   loadPut().then(loadState);
   setInterval(loadState,20000);
 })();
