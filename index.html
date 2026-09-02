@@ -94,7 +94,7 @@ header h1{font-size:17px;font-weight:700}header h1 b{color:var(--accent)}header 
 <div class="sec" id="view-done" style="display:none"></div>
 <div class="sec" id="view-mat" style="display:none"></div>
 <div class="sec" id="view-tasks" style="display:none"></div>
-<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-09-03 01:51:20<br>操作自动写回云端，每20秒自动同步全场</div>
+<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-09-03 02:00:04<br>操作自动写回云端，每20秒自动同步全场</div>
 </div>
 <div class="toast" id="toast"></div>
 <script>
@@ -136,7 +136,7 @@ var ICONS={
   chevronDown:'<polyline points="6 9 12 15 18 9"/>'
 };
 function ic(n,cls){return '<svg class="'+(cls||'ic')+'" viewBox="0 0 24 24">'+(ICONS[n]||'')+'</svg>';}
-var state={plan:[],tasks:[],takes:[],members:[]}, putUrl=null, ME=null, VIEW='home', busy=false, cfgOpen=false, noticeOpen=false, crewOpen=false;
+var state={plan:[],tasks:[],takes:[],members:[]}, putUrl=null, ME=null, VIEW='home', busy=false, cfgOpen=false, noticeOpen=false, crewOpen=false, jumpBack=null;
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 function toast(t){var e=document.getElementById('toast');e.textContent=t;e.style.display='block';clearTimeout(e._t);e._t=setTimeout(function(){e.style.display='none';},2600);}
 function saveMe(){
@@ -166,6 +166,7 @@ function enterMe(name,role,master){
 }
 function showTab(v,el){
   VIEW=v;
+  if(v==='home'||v==='tasks')jumpBack=null;
   ['home','plan','done','mat','tasks'].forEach(function(k){
     var d=document.getElementById('view-'+k);
     if(d)d.style.display=(k===v)?'block':'none';
@@ -687,7 +688,7 @@ function renderHome(){
 }
 function renderPlan(plan){
   var todo=plan.filter(function(x){return x.status!=='完成'&&x.status!=='素材';});
-  var h='';
+  var h=backBar();
   if(!canOp())h+='<div class="tl" style="margin-bottom:10px">👀 只读模式：导演/场记身份可操作勾选</div>';
   h+='<div class="tl" style="margin-bottom:10px">🎯 待拍摄 '+todo.length+' 镜 · 已完成 '+plan.filter(function(x){return x.status==='完成';}).length+' 镜 · 📦素材 '+plan.filter(function(x){return x.status==='素材';}).length+' 镜</div>';
   todo.forEach(function(x){
@@ -717,7 +718,7 @@ function renderPlan(plan){
 }
 function renderMat(plan){
   var mats=plan.filter(function(x){return x.status==='素材';});
-  var h='<div class="tl" style="margin-bottom:10px">'+ic("package")+' 素材提供 '+mats.length+' 镜（用素材剪辑的镜头都在这里；「ic("check")+ 完成」=素材已提供）</div>'
+  var h=backBar()+'<div class="tl" style="margin-bottom:10px">'+ic("package")+' 素材提供 '+mats.length+' 镜（用素材剪辑的镜头都在这里；「✓ 完成」=素材已提供）</div>'
     +'<div style="display:flex;gap:8px;margin-bottom:10px"><button class="btn" style="flex:1" onclick="copyMatList()">📋 复制素材清单</button></div>';
   mats.forEach(function(x){
     h+='<div class="card" id="pl-'+x.id+'" style="border-left:4px solid #6fa8dc">'
@@ -739,7 +740,7 @@ function renderMat(plan){
 }
 function renderDone(plan){
   var done=plan.filter(function(x){return x.status==='完成';});
-  var h='<div class="tl" style="margin-bottom:10px">'+ic("checkCircle")+' 已拍摄 '+done.length+' 镜（「ic("rotate")+ 撤回」可回到待拍摄）</div>';
+  var h=backBar()+'<div class="tl" style="margin-bottom:10px">'+ic("checkCircle")+' 已拍摄 '+done.length+' 镜（「↩ 撤回」可回到待拍摄）</div>';
   done.forEach(function(x){
     var isMat=x.status==='素材';
     var sc=isMat?'#6fa8dc':'#5fbf7a';
@@ -758,9 +759,28 @@ function renderDone(plan){
   });
   document.getElementById('view-done').innerHTML=h||'<div class="empty">还没有已归档的镜头</div>';
 }
+function backToTask(){
+  showTab('tasks',document.querySelectorAll('.tab')[4]);
+  var gn=jumpBack;jumpBack=null;
+  setTimeout(function(){
+    var card=document.getElementById('task-'+(gn===true?'':gn));
+    if(card){
+      card.scrollIntoView({behavior:'smooth',block:'center'});
+      card.classList.remove('flash');void card.offsetWidth;card.classList.add('flash');
+      setTimeout(function(){card.classList.remove('flash');},2400);
+    }
+  },350);
+}
+function backBar(){
+  if(!jumpBack)return '';
+  return '<button type="button" class="btn" style="width:100%;margin-bottom:10px;border-color:var(--accent);color:var(--accent);background:rgba(224,196,117,.06)" onclick="backToTask()">'+ic('rotate')+' 返回任务清单（任务'+(jumpBack===true?'':jumpBack)+'）</button>';
+}
 function goShot(id,shotNo){
   var it=state.plan.find(function(x){return x.id===id;});
   if(!it){toast('镜头不存在');return;}
+  // 记录来源任务（用于返回）
+  var t=state.tasks.find(function(x){return x.shots&&x.shots.some(function(s){return s.id===id;});});
+  jumpBack=t?t.group_no:true;
   var vIdx={待拍:1,开拍:1,完成:2,素材:3}[it.status];
   if(vIdx===undefined)vIdx=1;
   showTab(['home','plan','done','mat','tasks'][vIdx],document.querySelectorAll('.tab')[vIdx]);
@@ -793,7 +813,7 @@ function renderTasks(tasks){
     var st=t.shots.length&&gd===t.shots.length?'完成':(t.shots.some(function(s){return s.status==='开拍';})?'进行中':'待拍');
     var sc={待拍:'#565e6e',进行中:'#e8c77f',完成:'#5fbf7a'}[st]||'#565e6e';
     var pct=Math.round(gd/t.shots.length*100);
-    h+='<div class="card" style="border-left:4px solid '+sc+'"><div class="th"><span class="tg">任务'+t.group_no+'</span><span class="tg">'+esc(t.time_slot)+'</span><span class="tg" style="color:'+sc+'">'+st+'</span><span class="tm">约'+(t.est_minutes||0)+'分</span></div>'
+    h+='<div class="card" id="task-'+t.group_no+'" style="border-left:4px solid '+sc+'"><div class="th"><span class="tg">任务'+t.group_no+'</span><span class="tg">'+esc(t.time_slot)+'</span><span class="tg" style="color:'+sc+'">'+st+'</span><span class="tm">约'+(t.est_minutes||0)+'分</span></div>'
       +'<h3>'+esc(t.title)+'</h3>'
       +(PID===3?segImgs(t.title):shotGridHTML(t.shots))
       +(t.location?'<div class="tl">📍 '+esc(t.location)+'</div>':'')
