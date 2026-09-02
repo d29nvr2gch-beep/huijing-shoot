@@ -94,7 +94,7 @@ header h1{font-size:17px;font-weight:700}header h1 b{color:var(--accent)}header 
 <div class="sec" id="view-done" style="display:none"></div>
 <div class="sec" id="view-mat" style="display:none"></div>
 <div class="sec" id="view-tasks" style="display:none"></div>
-<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-09-03 02:00:04<br>操作自动写回云端，每20秒自动同步全场</div>
+<div style="padding:20px 16px;text-align:center;font-size:11.5px;color:var(--muted)">会镜·拍摄执行 云端协作版 · 生成于 2026-09-03 02:02:15<br>操作自动写回云端，每20秒自动同步全场</div>
 </div>
 <div class="toast" id="toast"></div>
 <script>
@@ -760,8 +760,8 @@ function renderDone(plan){
   document.getElementById('view-done').innerHTML=h||'<div class="empty">还没有已归档的镜头</div>';
 }
 function backToTask(){
-  showTab('tasks',document.querySelectorAll('.tab')[4]);
   var gn=jumpBack;jumpBack=null;
+  showTab('tasks',document.querySelectorAll('.tab')[4]);
   setTimeout(function(){
     var card=document.getElementById('task-'+(gn===true?'':gn));
     if(card){
